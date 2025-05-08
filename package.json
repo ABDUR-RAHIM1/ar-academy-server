@@ -4,8 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "index.js",
+    "build": "npm i"
   },
   "author": "abdur rahim",
   "license": "ISC",

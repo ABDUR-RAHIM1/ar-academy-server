@@ -132,6 +132,20 @@ export const getAllUserForAdmin = async (req, res) => {
     }
 }
 
+//  get login user account using token
+export const getSingleUser = async (req, res) => {
+    try {
+        const { id } = req.user;
+
+        const accounts = await AccountModel.findById(id).select("-password");
+        return res.status(200).json(accounts)
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error)
+    }
+}
+
 //  Update User Account
 export const updateUserAccount = async (req, res) => {
     const { userId } = req.params;

@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteUserAccount, getAllUserForAdmin, loginAccount, registerAccount, updateUserAccount } from "../../controllers/account/account.controller.js";
+import { deleteUserAccount, getAllUserForAdmin, getSingleUser, loginAccount, registerAccount, updateUserAccount } from "../../controllers/account/account.controller.js";
 import { userVerify } from "../../middleware/userVerify.js";
 
 const router = express.Router();
@@ -9,6 +9,7 @@ const router = express.Router();
 router.post("/register", registerAccount);
 router.post("/login", loginAccount);
 router.get("/all", getAllUserForAdmin);
+router.get("/user", userVerify, getSingleUser);
 router.put("/update/:userId", userVerify, updateUserAccount);
 router.delete("/delete/:userId", userVerify, deleteUserAccount);
 
