@@ -1,6 +1,6 @@
 
-import { createSlug } from "../../helpers/createSlug.js";
-import CategorieModel from "../../models/catagories/CategoriesModel.js";
+import { createSlug } from "../../helpers/createSlug.js"; 
+import CategorieModel from "../../models/categories/categoriesModel.js";
 import SubjectModel from "../../models/sub-categorie/sub-categorie.model.js";
 // SubjectModel === sub-categories
 

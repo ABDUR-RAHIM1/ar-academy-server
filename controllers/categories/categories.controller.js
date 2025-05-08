@@ -1,7 +1,7 @@
 
 import { createSlug } from "../../helpers/createSlug.js";
 import { serverError } from "../../helpers/serverError.js";
-import CategorieModel from "../../models/catagories/CategoriesModel.js";
+import CategorieModel from "../../models/categories/categoriesModel.js";
 
 export const createCategory = async (req, res) => {
     const { position, categorie, description } = req.body;
