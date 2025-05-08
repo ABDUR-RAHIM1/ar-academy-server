@@ -3,11 +3,12 @@ import QuestionsModel from "../../models/questions/questions.model.js";
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
-    const { sub_categorie, questions } = req.body;
+    const { sub_categorie, chapter, questions } = req.body;
 
     try {
         const newQuestions = new QuestionsModel({
             sub_categorie,
+            chapter,
             questions
         });
 
@@ -32,7 +33,8 @@ export const getAllQuestions = async (req, res) => {
 
         const questions = await QuestionsModel.find()
             .sort({ createdAt: -1 })
-            .populate("sub_categorie", "sub_name identifier type");
+            .populate("sub_categorie", "sub_name identifier type")
+            .populate("chapter", "chapter_name identifier type");
 
         res.status(200).json(questions);
     } catch (error) {
@@ -53,7 +55,34 @@ export const getQuestionById = async (req, res) => {
     try {
 
         const question = await QuestionsModel.findById(questionId)
-            .populate("sub_categorie", "sub_name identifier type");
+            .populate("sub_categorie", "sub_name identifier type")
+            .populate("chapter", "chapter_name identifier type");
+
+        if (!question) {
+            return res.status(404).json({
+                message: "Question not found"
+            });
+        }
+
+        res.status(200).json(question);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Failed to fetch question",
+            error
+        });
+    }
+};
+
+// ✅ GET - Get Question by ID
+export const getQuestionByChapterId = async (req, res) => {
+    const { chapterId } = req.params;
+
+    try {
+
+        const question = await QuestionsModel.find({chapter : chapterId})
+            .populate("sub_categorie", "sub_name identifier type")
+            .populate("chapter", "chapter_name identifier type");
 
         if (!question) {
             return res.status(404).json({
@@ -81,13 +110,14 @@ export const updateQuestionById = async (req, res) => {
         return res.status(400).json({ message: "Invalid Question ID" });
     }
 
-    try { 
+    try {
 
         const updatedQuestion = await QuestionsModel.findByIdAndUpdate(
             questionId,
             {
                 $set: {
                     sub_categorie,
+                    chapter,
                     questions
                 }
             },

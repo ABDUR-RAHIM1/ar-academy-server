@@ -1,3 +1,4 @@
+import { serverError } from "../../helpers/serverError.js";
 import CommentModel from "../../models/comments/comments.model.js";
 
 
@@ -99,18 +100,39 @@ export const postReplyToComment = async (req, res) => {
 
         if (!updatedComment) {
             return res.status(404).json({
-                message: "Comment not found", 
+                message: "Comment not found",
             });
         }
 
         return res.status(200).json({
-            message: "Reply successful", 
+            message: "Reply successful",
         });
 
-    } catch (error) { 
+    } catch (error) {
         return res.status(500).json({
             message: "Failed to post reply",
             error
         });
     }
 };
+
+export const deleteComment = async (req, res) => {
+    const { commentId } = req.params;
+    try {
+
+        const isDelete = await CommentModel.findByIdAndDelete(commentId);
+
+        if (!isDelete) {
+            return res.status(404).json({
+                message: "Comment not found!"
+            })
+        }
+
+        res.status(200).json({
+            message: "Comment Deleted succesfully"
+        })
+
+    } catch (error) {
+        serverError(res, 500)
+    }
+}
