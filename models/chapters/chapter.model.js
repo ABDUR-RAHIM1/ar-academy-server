@@ -14,16 +14,20 @@ const ChapterSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    solutionTable: {
+        type: [Object],
+        required: false
+    },
     sub_categorie_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "SubCategorie",
         required: [true, "Sub Category ID is required"]
     },
-    type: {
+
+    fileType: {
         type: String,
         required: true,
-        default: "free",
-        emun: ["free", "paid"]
+        enum: ["file", "editor"]
     },
 });
 

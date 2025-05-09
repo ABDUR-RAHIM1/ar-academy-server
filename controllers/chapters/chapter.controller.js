@@ -5,9 +5,9 @@ import SubjectModel from "../../models/sub-categorie/sub-categorie.model.js";
 
 //  create chapter
 export const createChapter = async (req, res) => {
-    const { chapter_name, contents, sub_categorie_id, type } = req.body;
+    const { chapter_name, contents, sub_categorie_id, fileType } = req.body;
 
-    if (!chapter_name || !contents || !sub_categorie_id || !type) {
+    if (!chapter_name || !contents || !sub_categorie_id || !fileType) {
         return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -20,12 +20,15 @@ export const createChapter = async (req, res) => {
             return res.status(400).json({ message: `${chapter_name} is already created.` });
         }
 
+
+
         const newChapter = new ChaptersModel({
             chapter_name,
             identifier: slug,
-            contents,
+            contents: fileType === "editor" ? contents : undefined,
+            solutionTable: fileType === "file" ? contents : undefined,
             sub_categorie_id,
-            type
+            fileType
         });
 
         await newChapter.save();
@@ -59,7 +62,7 @@ export const getChapterByIdentifier = async (req, res) => {
         return res.status(404).json({ message: "Chapter Name Missing!" });
     }
 
-    try {  
+    try {
 
         const chapter = await ChaptersModel.findOne({
             identifier: { $regex: `^${subIdentifier}$`, $options: "i" },
@@ -109,8 +112,8 @@ export const getChaptersBySubCategoryIdentifier = async (req, res) => {
 export const updateChapter = async (req, res) => {
     const { chapterIdentifier } = req.params; // _id
     const chapterId = chapterIdentifier;
-    const { chapter_name, contents, sub_categorie_id, type } = req.body;
- 
+    const { chapter_name, contents, sub_categorie_id, fileType } = req.body;
+
     if (!chapterId || chapterId === 'undefined') {
         return res.status(400).json({ message: "Invalid chapterId" });
     }
@@ -121,7 +124,7 @@ export const updateChapter = async (req, res) => {
         identifier: slug,
         contents,
         sub_categorie_id,
-        type
+        fileType
     };
 
     if (Object.keys(updatedBody).length === 0) {
