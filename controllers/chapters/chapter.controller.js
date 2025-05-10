@@ -5,9 +5,9 @@ import SubjectModel from "../../models/sub-categorie/sub-categorie.model.js";
 
 //  create chapter
 export const createChapter = async (req, res) => {
-    const { chapter_name, contents, sub_categorie_id, fileType } = req.body;
+    const { position, chapter_name, contents, sub_categorie_id, fileType } = req.body;
 
-    if (!chapter_name || !contents || !sub_categorie_id || !fileType) {
+    if (!position || !chapter_name || !contents || !sub_categorie_id || !fileType) {
         return res.status(400).json({ message: "All fields are required." });
     }
 
@@ -23,6 +23,7 @@ export const createChapter = async (req, res) => {
 
 
         const newChapter = new ChaptersModel({
+            position,
             chapter_name,
             identifier: slug,
             contents: fileType === "editor" ? contents : undefined,
@@ -45,7 +46,10 @@ export const createChapter = async (req, res) => {
 export const getAllChapters = async (req, res) => {
     try {
 
-        const chapters = await ChaptersModel.find().select("-contents");
+        const chapters = await ChaptersModel.find()
+            .select("-contents -soutionTable")
+            // .sort({ position: 1, _id: 1 })
+
         res.status(200).json(chapters);
     } catch (error) {
         console.error("Fetch Error:", error);
@@ -66,7 +70,8 @@ export const getChapterByIdentifier = async (req, res) => {
 
         const chapter = await ChaptersModel.findOne({
             identifier: { $regex: `^${subIdentifier}$`, $options: "i" },
-        });
+        })
+            // .sort({ position: 1, _id: 1 })
 
         if (!chapter) {
             return res.status(404).json({ message: "Chapter not found" });
@@ -79,7 +84,7 @@ export const getChapterByIdentifier = async (req, res) => {
 };
 
 
-// ✅ GET Chapters by SubCategory Identifier (without contents)
+// ✅ GET Chapters by SubCategory Identifier (without contents , only for sidebar and dashboard table)
 export const getChaptersBySubCategoryIdentifier = async (req, res) => {
     const { chapterIdentifier } = req.params;
 
@@ -91,7 +96,7 @@ export const getChaptersBySubCategoryIdentifier = async (req, res) => {
 
         const subCategorie = await SubjectModel.findOne({
             identifier: { $regex: `^${chapterIdentifier}$`, $options: "i" },
-        });
+        })
 
         if (!subCategorie) {
             return res.status(404).json({ message: "Sub Categorie Not Found!" });
@@ -99,7 +104,9 @@ export const getChaptersBySubCategoryIdentifier = async (req, res) => {
 
         const sub_id = subCategorie._id;
 
-        const chapters = await ChaptersModel.find({ sub_categorie_id: sub_id }).select("-contents");
+        const chapters = await ChaptersModel.find({ sub_categorie_id: sub_id })
+            .select("-contents -solutionTable")
+            .sort({ position: 1, _id: 1 })
 
         res.status(200).json(chapters);
     } catch (error) {
@@ -112,7 +119,7 @@ export const getChaptersBySubCategoryIdentifier = async (req, res) => {
 export const updateChapter = async (req, res) => {
     const { chapterIdentifier } = req.params; // _id
     const chapterId = chapterIdentifier;
-    const { chapter_name, contents, sub_categorie_id, fileType } = req.body;
+    const { position, chapter_name, contents, sub_categorie_id, fileType } = req.body;
 
     if (!chapterId || chapterId === 'undefined') {
         return res.status(400).json({ message: "Invalid chapterId" });
@@ -120,9 +127,11 @@ export const updateChapter = async (req, res) => {
 
     const slug = createSlug(chapter_name);
     const updatedBody = {
+        position,
         chapter_name,
         identifier: slug,
-        contents,
+        contents: fileType === "editor" ? contents : undefined,
+        solutionTable: fileType === "file" ? contents : undefined,
         sub_categorie_id,
         fileType
     };
@@ -177,3 +186,5 @@ export const deleteChapter = async (req, res) => {
         res.status(500).json({ message: "Chapter Delete Failed" });
     }
 };
+
+ 

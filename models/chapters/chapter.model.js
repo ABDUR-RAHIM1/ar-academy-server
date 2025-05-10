@@ -2,6 +2,10 @@ import mongoose from "mongoose";
 
 // Schema Definition
 const ChapterSchema = new mongoose.Schema({
+    position: {
+        type: Number,
+        required: [true, "Position is required"]
+    },
     chapter_name: {
         type: String,
         required: [true, "Chapter name is required"]
@@ -29,7 +33,7 @@ const ChapterSchema = new mongoose.Schema({
         required: true,
         enum: ["file", "editor"]
     },
-});
+}, { timestamps: true });
 
 
 // Model Definition
