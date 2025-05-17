@@ -42,14 +42,14 @@ export const createChapter = async (req, res) => {
 };
 
 
-// get all chapters
+// get all chapters without (contents , solutionTable)
 export const getAllChapters = async (req, res) => {
     try {
 
         const chapters = await ChaptersModel.find()
-            .select("-contents -soutionTable")
-            // .sort({ position: 1, _id: 1 })
-
+            .select("-contents -solutionTable")
+        // .sort({ position: 1, _id: 1 })
+      
         res.status(200).json(chapters);
     } catch (error) {
         console.error("Fetch Error:", error);
@@ -71,7 +71,7 @@ export const getChapterByIdentifier = async (req, res) => {
         const chapter = await ChaptersModel.findOne({
             identifier: { $regex: `^${subIdentifier}$`, $options: "i" },
         })
-            // .sort({ position: 1, _id: 1 })
+        // .sort({ position: 1, _id: 1 })
 
         if (!chapter) {
             return res.status(404).json({ message: "Chapter not found" });
@@ -120,6 +120,7 @@ export const updateChapter = async (req, res) => {
     const { chapterIdentifier } = req.params; // _id
     const chapterId = chapterIdentifier;
     const { position, chapter_name, contents, sub_categorie_id, fileType } = req.body;
+ 
 
     if (!chapterId || chapterId === 'undefined') {
         return res.status(400).json({ message: "Invalid chapterId" });
@@ -187,4 +188,4 @@ export const deleteChapter = async (req, res) => {
     }
 };
 
- 
+

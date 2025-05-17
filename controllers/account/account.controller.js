@@ -146,7 +146,7 @@ export const getSingleUser = async (req, res) => {
     }
 }
 
-//  Update User Account
+//  Update User  Status
 export const updateUserAccount = async (req, res) => {
     const { userId } = req.params;
     const { status } = await req.body;
