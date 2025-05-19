@@ -8,10 +8,10 @@ import { serverError } from "../../helpers/serverError.js";
 //  register 
 export const registerAccount = async (req, res) => {
 
-    const { plan, username, email, password, profilePhoto, role, bkashNumber, amount, adminKey } = req.body;
+    const { plan, username, email, password, profilePhoto, role, adminKey } = req.body;
 
     //  All Fields Validation
-    if (!plan || !username || !email || !password || !bkashNumber || !amount) {
+    if (!username || !email || !password) {
         return res.status(400).json({
             message: "All Fields required"
         })
@@ -46,9 +46,7 @@ export const registerAccount = async (req, res) => {
             email,
             password: hashPassword,
             profilePhoto,
-            role,
-            bkashNumber,
-            amount
+            role
         });
 
         const account = await newUser.save();
@@ -66,6 +64,7 @@ export const registerAccount = async (req, res) => {
         res.json({ message: "Register successful!", token });
 
     } catch (error) {
+        console.log(error)
         serverError(res, error)
     }
 };
@@ -137,7 +136,9 @@ export const getSingleUser = async (req, res) => {
     try {
         const { id } = req.user;
 
-        const accounts = await AccountModel.findById(id).select("-password");
+        const accounts = await AccountModel.findById(id)
+            .select("-password")
+            .populate("plan")
         return res.status(200).json(accounts)
 
     } catch (error) {

@@ -12,6 +12,7 @@ import chapterRouter from "./routes/chapters/chapters.route.js";
 import questionsRouter from "./routes/questions/questions.route.js";
 import resultsRouter from "./routes/results/results.route.js";
 import commentRouter from "./routes/comments/comments.route.js";
+import purchaseRouter from "./routes/purchasePlan/purchasePlan.js";
 
 export const app = express()
 
@@ -40,6 +41,8 @@ app.use("/api/chapters", chapterRouter)
 app.use("/api/questions", questionsRouter)
 app.use("/api/results", resultsRouter)
 app.use("/api/comment", commentRouter)
+
+app.use("/api/purchase", purchaseRouter)
 
 
 app.get('/', (req, res) => {

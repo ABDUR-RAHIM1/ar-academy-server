@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const AccountSchema = new mongoose.Schema({
     plan: {
-        type: Object,
-        required: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PurchasePlan'
     },
     username: {
         type: String,
@@ -31,14 +31,7 @@ const AccountSchema = new mongoose.Schema({
         enum: ["accept", "pending", "reject"],
         default: "pending"
     },
-    bkashNumber: {
-        type: String,
-        required: true,
-    },
-    amount: {
-        type: Number,
-        required: true,
-    },
+
 }, { timestamps: true });
 
 
