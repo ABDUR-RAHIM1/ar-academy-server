@@ -13,12 +13,13 @@ export const purchasePlan = async (req, res) => {
         }
 
 
-        const isExisPurchase = await PurchasePlanModel.findOne({
+        const isExitPurchase = await PurchasePlanModel.findOne({
             user: id,
             status: 'active'
         });
 
-        if (isExisPurchase) {
+
+        if (isExitPurchase) {
             return res.status(404).json({
                 message: "You have already Purchased One"
             })
@@ -67,6 +68,8 @@ export const purchasePlan = async (req, res) => {
     }
 };
 
+
+//  ata dashboard a use korte hbe (akhono use kora hoyni )
 export const getAllPurchasePlan = async (req, res) => {
     try {
 
@@ -78,4 +81,50 @@ export const getAllPurchasePlan = async (req, res) => {
     } catch (error) {
         return serverError(res, error)
     }
+};
+
+
+export const deleteMyPlan = async (req, res) => {
+    try {
+
+        const { planId } = req.params;
+
+        const isPlan = await PurchasePlanModel.findById(planId);
+
+        if (!isPlan) {
+            return res.status(404).json({
+                message: "Plan not found"
+            })
+        }
+
+        const isDeleted = await PurchasePlanModel.findByIdAndDelete(planId);
+
+        const updateUserAccount = await AccountModel.findByIdAndUpdate(isPlan.user, {
+            $unset: { plan: "" }
+        }, { new: true })
+
+
+        if (!isDeleted) {
+            return res.status(404).json({
+                message: "Plan already deleted or not found"
+            });
+        }
+
+        if (!updateUserAccount) {
+            return res.status(500).json({
+                message: "Failed to update user account"
+            });
+        }
+
+
+        return res.status(200).json({
+            message: "Deleted The  Successfully"
+        })
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error)
+    }
 }
+
+

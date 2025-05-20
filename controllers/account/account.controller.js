@@ -8,7 +8,7 @@ import { serverError } from "../../helpers/serverError.js";
 //  register 
 export const registerAccount = async (req, res) => {
 
-    const { plan, username, email, password, profilePhoto, role, adminKey } = req.body;
+    const { plan, username, email, password, role, adminKey } = req.body;
 
     //  All Fields Validation
     if (!username || !email || !password) {
@@ -45,7 +45,6 @@ export const registerAccount = async (req, res) => {
             username,
             email,
             password: hashPassword,
-            profilePhoto,
             role
         });
 
@@ -147,7 +146,7 @@ export const getSingleUser = async (req, res) => {
     }
 }
 
-//  Update User  Status
+//  Update User  Status (admin authenticatiob guard add korte hbe)
 export const updateUserAccount = async (req, res) => {
     const { userId } = req.params;
     const { status } = await req.body;
@@ -184,7 +183,50 @@ export const updateUserAccount = async (req, res) => {
 };
 
 
-// delete User Account only for admin
+// Update user account information for user
+export const updateMyAccount = async (req, res) => {
+    try {
+
+        const { userId } = req.params;
+
+        const { username, email, password, profilePhoto, mobile, dob, gender, address, qualification, instituteName, favoriteSubject } = req.body;
+
+        const isUpdated = await AccountModel.findByIdAndUpdate(userId, {
+            $set: {
+                username,
+                email,
+                password,
+                profilePhoto,
+                mobile,
+                dob,
+                gender,
+                address,
+                qualification,
+                instituteName,
+                favoriteSubject
+            }
+        });
+
+
+        if (!isUpdated) {
+            return res.status(404).json({
+                message: "User not found"
+            })
+        }
+
+        return res.status(200).json({
+            message: "Your account updated successfully"
+        })
+
+
+    } catch (error) {
+        console.log(error)
+        return serverError(res, error)
+    }
+}
+
+
+// delete User Account only for admin (admin authenticatiob guard add korte hbe)
 export const deleteUserAccount = async (req, res) => {
     const { userId } = req.params
 
