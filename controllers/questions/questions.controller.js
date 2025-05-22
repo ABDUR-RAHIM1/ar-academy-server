@@ -3,14 +3,15 @@ import QuestionsModel from "../../models/questions/questions.model.js";
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
-    const { sub_categorie, chapter, questions } = req.body;
+    const { isAll, isAllTitle, sub_categorie, chapter, questions } = req.body;
 
     try {
-        const newQuestions = new QuestionsModel({
-            sub_categorie,
-            chapter,
-            questions
-        });
+
+        const newQuestions = new QuestionsModel(
+            isAll
+                ? { isAll, isAllTitle, questions }
+                : { isAll, sub_categorie, chapter, questions }
+        );
 
         await newQuestions.save();
 
@@ -20,6 +21,18 @@ export const postQuestions = async (req, res) => {
 
     } catch (error) {
         console.error(error);
+        if (error.name === "ValidationError") {
+            // field-wise errors একটায় সাজানো
+            const errors = {};
+            Object.keys(error.errors).forEach(field => {
+                errors[field] = error.errors[field].message;
+            });
+
+            return res.status(400).json({
+                message: "Validation Failed",
+                errors: errors
+            });
+        }
         res.status(500).json({
             message: "Failed to post questions",
             error
@@ -80,7 +93,7 @@ export const getQuestionByChapterId = async (req, res) => {
 
     try {
 
-        const question = await QuestionsModel.find({chapter : chapterId})
+        const question = await QuestionsModel.find({ chapter: chapterId })
             .populate("sub_categorie", "sub_name identifier type")
             .populate("chapter", "chapter_name identifier type");
 

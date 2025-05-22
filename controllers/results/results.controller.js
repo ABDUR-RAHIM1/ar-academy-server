@@ -35,6 +35,7 @@ export const getResults = async (req, res) => {
     try {
 
         const results = await ResultsModel.find()
+            .sort({ createdAt: -1 })
             .populate("user", "username email");
 
         res.status(200).json(results);
@@ -52,7 +53,8 @@ export const getResults = async (req, res) => {
 export const getMyResults = async (req, res) => {
     const { id } = req.user;
     try {
-        const myResults = await ResultsModel.find({ user: id });
+        const myResults = await ResultsModel.find({ user: id })
+            .sort({ createdAt: -1 })
 
         res.status(200).json(myResults);
 
@@ -64,7 +66,7 @@ export const getMyResults = async (req, res) => {
     }
 };
 
- 
+
 // resutl details by Id
 export const getResultById = async (req, res) => {
     const { resultId } = req.params;
