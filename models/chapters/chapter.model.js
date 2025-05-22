@@ -1,5 +1,48 @@
 import mongoose from "mongoose";
 
+
+
+// Step 1: Create sub-schema for solution item
+const SolutionItemSchema = new mongoose.Schema({
+    ID: {
+        type: String,
+        required: [true, "ID is required"]
+    },
+    Question: {
+        type: String,
+        required: [true, "Question is required"]
+    },
+    Option1: {
+        type: String,
+        required: [true, "Option1 is required"]
+    },
+    Option2: {
+        type: String,
+        required: [true, "Option2 is required"]
+    }, 
+    Option3: {
+        type: String,
+        required: [true, "Option3 is required"]
+    },
+    Option4: {
+        type: String,
+        required: [true, "Option4 is required"]
+    },
+    CorrectAnswer: {
+        type: String,
+        required: [true, "CorrectAnswer is required"]
+    },
+    Explanation: {
+        type: String,
+        required: false
+    },
+    Subject: {
+        type: String,
+        required: [true, "Subject is required"]
+    }
+}, { _id: false, strict: true });
+
+
 // Schema Definition
 const ChapterSchema = new mongoose.Schema({
     position: {
@@ -19,7 +62,7 @@ const ChapterSchema = new mongoose.Schema({
         required: false
     },
     solutionTable: {
-        type: [Object],
+        type: [SolutionItemSchema],
         required: false
     },
     sub_categorie_id: {

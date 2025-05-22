@@ -20,8 +20,6 @@ export const createChapter = async (req, res) => {
             return res.status(400).json({ message: `${chapter_name} is already created.` });
         }
 
-
-
         const newChapter = new ChaptersModel({
             position,
             chapter_name,
@@ -37,6 +35,18 @@ export const createChapter = async (req, res) => {
         res.status(201).json({ message: "Chapter Created Successfully" });
     } catch (error) {
         console.error("Error:", error);
+        if (error.name === "ValidationError") {
+            // field-wise errors একটায় সাজানো
+            const errors = {};
+            Object.keys(error.errors).forEach(field => {
+                errors[field] = error.errors[field].message;
+            });
+
+            return res.status(400).json({
+                message: "Validation Failed",
+                errors: errors
+            });
+        }
         res.status(500).json({ message: "Chapter Creation Failed." });
     }
 };
@@ -49,7 +59,7 @@ export const getAllChapters = async (req, res) => {
         const chapters = await ChaptersModel.find()
             .select("-contents -solutionTable")
         // .sort({ position: 1, _id: 1 })
-      
+
         res.status(200).json(chapters);
     } catch (error) {
         console.error("Fetch Error:", error);
@@ -120,7 +130,7 @@ export const updateChapter = async (req, res) => {
     const { chapterIdentifier } = req.params; // _id
     const chapterId = chapterIdentifier;
     const { position, chapter_name, contents, sub_categorie_id, fileType } = req.body;
- 
+
 
     if (!chapterId || chapterId === 'undefined') {
         return res.status(400).json({ message: "Invalid chapterId" });
