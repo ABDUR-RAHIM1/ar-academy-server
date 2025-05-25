@@ -19,7 +19,7 @@ const SolutionItemSchema = new mongoose.Schema({
     Option2: {
         type: String,
         required: [true, "Option2 is required"]
-    }, 
+    },
     Option3: {
         type: String,
         required: [true, "Option3 is required"]
@@ -70,7 +70,10 @@ const ChapterSchema = new mongoose.Schema({
         ref: "SubCategorie",
         required: [true, "Sub Category ID is required"]
     },
-
+    type: {
+        type: String,
+        enum: ["paid", "free"],
+    },
     fileType: {
         type: String,
         required: true,

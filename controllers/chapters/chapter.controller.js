@@ -5,7 +5,7 @@ import SubjectModel from "../../models/sub-categorie/sub-categorie.model.js";
 
 //  create chapter
 export const createChapter = async (req, res) => {
-    const { position, chapter_name, contents, sub_categorie_id, fileType } = req.body;
+    const { position, chapter_name, contents, sub_categorie_id, type, fileType } = req.body;
 
     if (!position || !chapter_name || !contents || !sub_categorie_id || !fileType) {
         return res.status(400).json({ message: "All fields are required." });
@@ -27,6 +27,7 @@ export const createChapter = async (req, res) => {
             contents: fileType === "editor" ? contents : undefined,
             solutionTable: fileType === "file" ? contents : undefined,
             sub_categorie_id,
+            type,
             fileType
         });
 
@@ -129,7 +130,7 @@ export const getChaptersBySubCategoryIdentifier = async (req, res) => {
 export const updateChapter = async (req, res) => {
     const { chapterIdentifier } = req.params; // _id
     const chapterId = chapterIdentifier;
-    const { position, chapter_name, contents, sub_categorie_id, fileType } = req.body;
+    const { position, chapter_name, contents, sub_categorie_id, type, fileType } = req.body;
 
 
     if (!chapterId || chapterId === 'undefined') {
@@ -144,6 +145,7 @@ export const updateChapter = async (req, res) => {
         contents: fileType === "editor" ? contents : undefined,
         solutionTable: fileType === "file" ? contents : undefined,
         sub_categorie_id,
+        type,
         fileType
     };
 
