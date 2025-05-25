@@ -1,0 +1,25 @@
+import PurchasePlanModel from "../models/purchasePlan/purchasePlan.js";
+
+
+
+// ইউজার আইডি দিয়ে প্ল্যান চেক করে স্ট্যাটাস আপডেট করবে
+export const checkAndUpdatePurchasePlanStatus = async (userId) => {
+    try {
+        const plan = await PurchasePlanModel.findOne({ user: userId });
+
+        if (!plan) return null;
+
+        const now = new Date();
+
+        // যদি সময় পেরিয়ে যায়
+        if (plan.endDate < now && plan.status === "active") {
+            plan.status = "expired";
+            await plan.save();
+        }
+
+        return plan;
+    } catch (error) {
+        console.error("Purchase plan status check failed:", error);
+        return null;
+    }
+};
