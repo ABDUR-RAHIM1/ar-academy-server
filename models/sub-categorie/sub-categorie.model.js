@@ -32,9 +32,7 @@ const SubCategorieSchema = new mongoose.Schema(
             enum: ["paid", "free"],
             default: "free"
         },
-        coverPhoto: {
-            type: String,
-        },
+    
     },
     { timestamps: true }
 );

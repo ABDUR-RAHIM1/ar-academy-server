@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken"; 
-import { secretKey } from "../config/constans";
+import { secretKey } from "../config/constans.js";
 
 export const adminVerify = async (req, res, next) => {
     try {

@@ -15,7 +15,7 @@ const AccountSchema = new mongoose.Schema({
         required: true,
     },
     profilePhoto: {
-        type: String     
+        type: String
     },
     mobile: {
         type: Number
@@ -52,7 +52,7 @@ const AccountSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ["accept", "pending", "reject"],
-        default: "pending"
+        default: "accept"
     },
 
 }, { timestamps: true });

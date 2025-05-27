@@ -94,14 +94,14 @@ export const getChapterByIdentifier = async (req, res) => {
 
         // ✅ পেইড হলে ইউজার লাগবে 
         if (!req.user) {
-            return res.status(401).json({ message: "এই অধ্যায় দেখতে হলে আপনাকে লগইন করতে হবে।" });
+            return res.status(401).json({ message: "এই অধ্যায় দেখতে হলে আপনাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে" });
         }
 
         // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
         const plan = await checkAndUpdatePurchasePlanStatus(req.user.id);
 
         if (!plan || plan.status === "expired") {
-            return res.status(403).json({ message: "এই অধ্যায়টি দেখতে হলে আপনাকে প্ল্যান কিনতে হবে।" });
+            return res.status(403).json({ message: "এই অধ্যায়টি দেখতে হলে আপনাকে প্ল্যান ক্রয় করতে হবে।" });
         }
 
         // ✅ সব ঠিক থাকলে চ্যাপ্টার পাঠাও

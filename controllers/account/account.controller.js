@@ -18,6 +18,7 @@ export const registerAccount = async (req, res) => {
     }
 
 
+
     try {
 
         // যদি ইউজার `admin` হয়, তাহলে secret key যাচাই করতে হবে
@@ -129,6 +130,24 @@ export const getAllUserForAdmin = async (req, res) => {
         serverError(res, error)
     }
 }
+
+
+//  get all admin for admin (role : admin)
+export const getAllAdmin = async (req, res) => {
+    try {
+
+        const admins = await AccountModel.find({ role: "admin" })
+            .select("-password")
+
+        return res.status(200).json(admins)
+
+    } catch (error) {
+        serverError(res, error)
+    }
+}
+
+
+
 
 //  get login user account using token
 export const getSingleUser = async (req, res) => {

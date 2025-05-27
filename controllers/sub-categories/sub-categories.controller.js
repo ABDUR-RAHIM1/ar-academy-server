@@ -7,7 +7,7 @@ import SubjectModel from "../../models/sub-categorie/sub-categorie.model.js";
 
 // Create Sub Category
 export const createSubCategory = async (req, res) => {
-    const { sub_name, description, categorieId, type, coverPhoto } = req.body;
+    const { sub_name, description, categorieId, type } = req.body;
 
     if (!sub_name || !categorieId || !type) {
         return res.status(400).json({ message: "All Fields Are Required!" });
@@ -27,8 +27,7 @@ export const createSubCategory = async (req, res) => {
             identifier: slug,
             description,
             categorieId,
-            type,
-            coverPhoto
+            type
         });
 
         await newSubject.save();
@@ -82,7 +81,7 @@ export const getSubCategoriesByCategory = async (req, res) => {
 // Update Sub Category
 export const updateSubCategory = async (req, res) => {
     const { sub_id } = req.params;
-    const { sub_name, description, type, coverPhoto } = req.body;
+    const { sub_name, description, type } = req.body;
 
     const slug = createSlug(sub_name);
 
@@ -90,8 +89,7 @@ export const updateSubCategory = async (req, res) => {
         sub_name,
         identifier: slug,
         description,
-        type,
-        coverPhoto
+        type
     };
 
     try {
