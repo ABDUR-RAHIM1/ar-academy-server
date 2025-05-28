@@ -51,8 +51,8 @@ const AccountSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["accept", "pending", "reject"],
-        default: "accept"
+        enum: ["active", "pending", "reject"],
+        default: "active"
     },
 
 }, { timestamps: true });

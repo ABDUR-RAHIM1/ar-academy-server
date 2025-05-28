@@ -163,12 +163,31 @@ export const getSingleUser = async (req, res) => {
         console.log(error)
         serverError(res, error)
     }
+};
+
+
+//  get login Admin account using token
+export const getSinglAdmin = async (req, res) => {
+    try {
+        const { id } = req.admin;
+
+        const adminAccount = await AccountModel.findById(id)
+            .select("-password")
+            .populate("plan")
+        return res.status(200).json(adminAccount)
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error)
+    }
 }
+
 
 //  Update User  Status (admin authenticatiob guard add korte hbe)
 export const updateUserAccount = async (req, res) => {
     const { userId } = req.params;
     const { status } = await req.body;
+
 
     try {
 
@@ -243,6 +262,50 @@ export const updateMyAccount = async (req, res) => {
         return serverError(res, error)
     }
 }
+
+
+// Update Admin account information for Login
+export const updateAdminAccount = async (req, res) => {
+    try {
+
+        const { adminId } = req.params;
+
+        const { username, email, password, profilePhoto, mobile, dob, gender, address, qualification, instituteName, favoriteSubject } = req.body;
+
+        const isUpdated = await AccountModel.findByIdAndUpdate(adminId, {
+            $set: {
+                username,
+                email,
+                password,
+                profilePhoto,
+                mobile,
+                dob,
+                gender,
+                address,
+                qualification,
+                instituteName,
+                favoriteSubject
+            }
+        });
+
+
+        if (!isUpdated) {
+            return res.status(404).json({
+                message: "Admin not found"
+            })
+        }
+
+        return res.status(200).json({
+            message: "Your account updated successfully"
+        })
+
+
+    } catch (error) {
+        console.log(error)
+        return serverError(res, error)
+    }
+}
+
 
 
 // delete User Account only for admin (admin authenticatiob guard add korte hbe)

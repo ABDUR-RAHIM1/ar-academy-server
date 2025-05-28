@@ -13,6 +13,7 @@ import questionsRouter from "./routes/questions/questions.route.js";
 import resultsRouter from "./routes/results/results.route.js";
 import commentRouter from "./routes/comments/comments.route.js";
 import purchaseRouter from "./routes/purchasePlan/purchasePlan.js";
+import utilsRouter from "./routes/utils/utils.route.js";
 
 export const app = express()
 
@@ -44,6 +45,8 @@ app.use("/api/comment", commentRouter)
 
 app.use("/api/purchase", purchaseRouter)
 
+
+app.use("/api/utils" , utilsRouter)
 
 app.get('/', (req, res) => {
     res.send('Welcome to the AR AcademyBD API!');
