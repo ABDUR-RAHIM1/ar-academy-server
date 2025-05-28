@@ -20,13 +20,14 @@ export const createChapter = async (req, res) => {
         if (exist) {
             return res.status(400).json({ message: `${chapter_name} is already created.` });
         }
-
+    
         const newChapter = new ChaptersModel({
             position,
             chapter_name,
             identifier: slug,
             contents: fileType === "editor" ? contents : undefined,
             solutionTable: fileType === "file" ? contents : undefined,
+            writtenSolution: fileType === "written" ? contents : undefined,
             sub_categorie_id,
             type,
             fileType

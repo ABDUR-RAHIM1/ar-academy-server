@@ -1,6 +1,7 @@
 
 import express from "express";
 import { getCourseSummary, getUserSummary } from "../../utils/getSummary.js";
+import { getBestPerformers } from "../../utils/topPerformer.js";
 
 
 const router = express.Router();
@@ -9,6 +10,8 @@ const router = express.Router();
 router.get("/getSummary", getCourseSummary);
 router.get("/getUserSummary", getUserSummary);
 
+//  get best performer 
+router.get("/best-performer", getBestPerformers)
 
 
 export default router;

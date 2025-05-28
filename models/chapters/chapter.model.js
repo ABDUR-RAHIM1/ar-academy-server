@@ -43,6 +43,28 @@ const SolutionItemSchema = new mongoose.Schema({
 }, { _id: false, strict: true });
 
 
+const WrittenSolutionSchema = new mongoose.Schema({
+    ID: {
+        type: String,
+        required: [true, "ID is required"]
+    },
+    Question: {
+        type: String,
+        required: [true, "Question is required"]
+    },
+    Answer: {
+        type: String,
+        required: [true, "CorrectAnswer is required"]
+    },
+    Subject: {
+        type: String,
+        required: [true, "Subject is required"]
+    }
+}, { _id: false, strict: true });
+
+
+
+
 // Schema Definition
 const ChapterSchema = new mongoose.Schema({
     position: {
@@ -65,6 +87,10 @@ const ChapterSchema = new mongoose.Schema({
         type: [SolutionItemSchema],
         required: false
     },
+    writtenSolution: {
+        type: [WrittenSolutionSchema],
+        required: false
+    },
     sub_categorie_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "SubCategorie",
@@ -77,7 +103,7 @@ const ChapterSchema = new mongoose.Schema({
     fileType: {
         type: String,
         required: true,
-        enum: ["file", "editor"]
+        enum: ["file", "editor" , "written"]
     },
 }, { timestamps: true });
 
