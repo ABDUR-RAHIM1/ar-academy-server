@@ -12,15 +12,14 @@ export const createChapter = async (req, res) => {
         return res.status(400).json({ message: "All fields are required." });
     }
 
-    const slug = createSlug(chapter_name);
-
+    const slug = createSlug(chapter_name); 
     try {
 
         const exist = await ChaptersModel.findOne({ identifier: slug });
         if (exist) {
             return res.status(400).json({ message: `${chapter_name} is already created.` });
         }
-    
+
         const newChapter = new ChaptersModel({
             position,
             chapter_name,
@@ -32,7 +31,6 @@ export const createChapter = async (req, res) => {
             type,
             fileType
         });
-
         await newChapter.save();
 
         res.status(201).json({ message: "Chapter Created Successfully" });

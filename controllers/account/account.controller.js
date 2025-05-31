@@ -72,21 +72,28 @@ export const registerAccount = async (req, res) => {
 
 // login
 export const loginAccount = async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     // All Fields Validation
-    if (!email || !password) {
+    if (!email || !password || !role) {
         return res.status(400).json({
-            message: "All Fields required"
+            message: "All fields are required"
         });
     }
 
     try {
-        // Email Exist Check
-        const isAccount = await AccountModel.findOne({ email });
+        // Email & Role Match Check
+        const isAccount = await AccountModel.findOne({ email, role });
+
+        if (isAccount.status !== "active") {
+            return res.status(400).json({
+                message: `your account has been ${isAccount.status} , Please Contact With Admin`
+            })
+        }
+
         if (!isAccount) {
             return res.status(404).json({
-                message: "Invalid Credentials"
+                message: "Invalid credentials (email or role mismatch)"
             });
         }
 
@@ -94,7 +101,7 @@ export const loginAccount = async (req, res) => {
         const matchPassword = await bcrypt.compare(password, isAccount.password);
         if (!matchPassword) {
             return res.status(404).json({
-                message: "Invalid Credentials"
+                message: "Invalid credentials (wrong password)"
             });
         }
 
@@ -108,7 +115,6 @@ export const loginAccount = async (req, res) => {
 
         const token = jwt.sign(accountToken, secretKey, { algorithm: 'HS256', expiresIn: '7d' });
 
-
         return res.status(200).json({
             message: "Login successfully!",
             token: token
@@ -118,6 +124,7 @@ export const loginAccount = async (req, res) => {
         return serverError(res, error);
     }
 };
+
 
 //  get all for admin 
 export const getAllUserForAdmin = async (req, res) => {
@@ -308,22 +315,22 @@ export const updateAdminAccount = async (req, res) => {
 
 
 
-// delete User Account only for admin (admin authenticatiob guard add korte hbe)
+// delete User Account only for admin 
 export const deleteUserAccount = async (req, res) => {
-    const { userId } = req.params
+    const { accountId } = req.params
 
     try {
-        if (!userId) {
+        if (!accountId) {
             return res.status(400).json({
-                message: "User not found"
+                message: "account Id not found"
             })
         }
 
-        const isDeleted = await AccountModel.findByIdAndDelete(userId);
+        const isDeleted = await AccountModel.findByIdAndDelete(accountId);
 
         if (isDeleted) {
             return res.status(200).json({
-                message: "User Deleted Succesfully"
+                message: "Account Deleted Succesfully"
             })
         }
 

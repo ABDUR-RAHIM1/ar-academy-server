@@ -9,17 +9,15 @@ const router = express.Router();
 
 router.post("/register", registerAccount);
 router.post("/login", loginAccount);
-router.get("/all", getAllUserForAdmin);
-router.get("/all-admin", getAllAdmin); /// adminVerify add korte hbe
-
 router.get("/user", userVerify, getSingleUser);
+router.put("/updateAll/:userId", userVerify, updateMyAccount); // update all means all information
+
+router.get("/all", adminVerify, getAllUserForAdmin);
+router.get("/all-admin", adminVerify, getAllAdmin); /// adminVerify add korte hbe
 router.get("/admin", adminVerify, getSinglAdmin);
-
 router.put("/updateStatus/:userId", adminVerify, updateUserAccount); // for admin
-router.put("/updateAll/:userId", userVerify, updateMyAccount);
 router.put("/updateAdminAccount/:adminId", adminVerify, updateAdminAccount);
-
-router.delete("/delete/:userId", userVerify, deleteUserAccount);
+router.delete("/delete/:accountId", adminVerify, deleteUserAccount); // user and admin deleted access for admin
 
 
 export default router;
