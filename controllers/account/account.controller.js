@@ -316,25 +316,45 @@ export const updateAdminAccount = async (req, res) => {
 
 
 // delete User Account only for admin 
+// delete User Account only for admin 
 export const deleteUserAccount = async (req, res) => {
-    const { accountId } = req.params
+    const { accountId } = req.params;
 
     try {
         if (!accountId) {
             return res.status(400).json({
-                message: "account Id not found"
-            })
+                message: "Account ID not found"
+            });
         }
 
-        const isDeleted = await AccountModel.findByIdAndDelete(accountId);
+        // চেক করি এই account টা admin কিনা
+        const accountToDelete = await AccountModel.findById(accountId);
 
-        if (isDeleted) {
-            return res.status(200).json({
-                message: "Account Deleted Succesfully"
-            })
+        if (!accountToDelete) {
+            return res.status(404).json({
+                message: "অ্যাকাউন্ট পাওয়া যায়নি"
+            });
         }
+
+        // যদি এই account টি admin হয়
+        if (accountToDelete.role === "admin") {
+            const totalAdmins = await AccountModel.countDocuments({ role: "admin" });
+
+            if (totalAdmins <= 1) {
+                return res.status(403).json({
+                    message: "কমপক্ষে একজন অ্যাডমিন থাকা বাধ্যতামূলক।"
+                });
+            }
+        }
+
+        // তারপর ডিলিট করবো
+        await AccountModel.findByIdAndDelete(accountId);
+
+        return res.status(200).json({
+            message: "অ্যাকাউন্ট সফলভাবে ডিলিট হয়েছে।"
+        });
 
     } catch (error) {
-        serverError(res, error)
+        serverError(res, error);
     }
 };

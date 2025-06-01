@@ -84,6 +84,7 @@ export const getAllPurchasePlan = async (req, res) => {
 };
 
 
+// using in the user profile
 export const deleteMyPlan = async (req, res) => {
     try {
 

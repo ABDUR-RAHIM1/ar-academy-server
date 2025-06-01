@@ -69,10 +69,17 @@ export const getPlanByKey = async (req, res) => {
 export const updatePlan = async (req, res) => {
     const { planId } = req.params;
     try {
-        const plan = await PlanModel.findOneAndUpdate(planId, req.body, { new: true });
+        const plan = await PlanModel.findByIdAndUpdate(planId,
+            {
+                $set: req.body
+            },
+            { new: true });
         if (!plan) return res.status(404).json({ message: "Plan not found" });
-        res.status(200).json(plan);
+        res.status(200).json({
+            message: "Plan Update succesfull"
+        });
     } catch (err) {
+        console.log(err)
         res.status(400).json({ error: err.message });
     }
 };
