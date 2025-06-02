@@ -68,8 +68,7 @@ export const purchasePlan = async (req, res) => {
     }
 };
 
-
-//  ata dashboard a use korte hbe (akhono use kora hoyni )
+ 
 export const getAllPurchasePlan = async (req, res) => {
     try {
 

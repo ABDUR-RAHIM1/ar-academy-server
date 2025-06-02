@@ -87,7 +87,7 @@ export const getQuestionById = async (req, res) => {
     }
 };
 
-// ✅ GET - Get Question by ID
+// ✅ GET - Get Question by Chapter ID
 export const getQuestionByChapterId = async (req, res) => {
     const { chapterId } = req.params;
 
@@ -112,6 +112,58 @@ export const getQuestionByChapterId = async (req, res) => {
         });
     }
 };
+
+
+// ✅ GET - Get Questions by isAllTitle filter (partial match)
+export const getQuestionByIsAllTitle = async (req, res) => {
+    const { isAllTitle } = req.params;
+
+    try {
+        // isAllTitle কে শব্দে ভাগ করো
+        const words = isAllTitle.split(' ').filter(Boolean);
+
+        // প্রথমে $or দিয়ে সব মিলানো রেকর্ডগুলো নিয়ে আসো
+        const orConditions = words.map(word => ({
+            isAllTitle: { $regex: word, $options: 'i' }
+        }));
+
+        let questions = await QuestionsModel.find({
+            $or: orConditions
+        })
+            .populate("sub_categorie", "sub_name identifier type")
+            .populate("chapter", "chapter_name identifier type");
+
+        // এখন JavaScript দিয়ে ফিল্টার করো, যেগুলোর isAllTitle তে কমপক্ষে 2 টা শব্দ আছে
+        questions = questions.filter(q => {
+            let matchedCount = 0;
+            const title = q.isAllTitle.toLowerCase();
+
+            for (const word of words) {
+                if (title.includes(word.toLowerCase())) {
+                    matchedCount++;
+                }
+                if (matchedCount >= 2) return true; // 2 বা তার বেশি শব্দ মিললে true
+            }
+            return false; // ২ এর কম শব্দ মিললে false
+        });
+
+        if (questions.length === 0) {
+            return res.status(404).json({
+                message: "Related questions not found"
+            });
+        }
+
+        res.status(200).json(questions);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Failed to fetch Related questions",
+            error
+        });
+    }
+};
+
 
 
 // ✅ PUT - Update a question by ID
