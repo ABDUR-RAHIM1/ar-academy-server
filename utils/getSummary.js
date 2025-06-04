@@ -15,6 +15,7 @@ export const getCourseSummary = async (req, res) => {
         const subCategoriesCount = await SubjectModel.countDocuments();
         const chaptersCount = await ChaptersModel.countDocuments();
         const questionsCount = await QuestionsModel.countDocuments();
+        const soldCount = await PurchasePlanModel.countDocuments();
         const jobPostsCount = 50; // pore job post get kore replace korte hbe
 
         const summary = [
@@ -22,6 +23,7 @@ export const getCourseSummary = async (req, res) => {
             { name: "Sub-Categories", count: subCategoriesCount },
             { name: "Chapters", count: chaptersCount },
             { name: "Questions", count: questionsCount },
+            { name: "Sold", count: soldCount },
             { name: "Job Posts", count: jobPostsCount },
         ];
         res.status(200).json(summary);
