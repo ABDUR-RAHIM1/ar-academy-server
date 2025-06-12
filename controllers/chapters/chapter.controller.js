@@ -12,7 +12,8 @@ export const createChapter = async (req, res) => {
         return res.status(400).json({ message: "All fields are required." });
     }
 
-    const slug = createSlug(chapter_name); 
+    const slug = createSlug(chapter_name);
+    
     try {
 
         const exist = await ChaptersModel.findOne({ identifier: slug });
@@ -162,6 +163,7 @@ export const updateChapter = async (req, res) => {
         identifier: slug,
         contents: fileType === "editor" ? contents : undefined,
         solutionTable: fileType === "file" ? contents : undefined,
+        writtenSolution: fileType === "written" ? contents : undefined,
         sub_categorie_id,
         type,
         fileType
