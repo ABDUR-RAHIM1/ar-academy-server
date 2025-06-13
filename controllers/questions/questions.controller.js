@@ -41,36 +41,44 @@ export const postQuestions = async (req, res) => {
     }
 };
 
-// ✅ GET - Fetch All Questions
+// ✅ GET - Fetch All Questions with optionalAuth (middlewere)
 export const getAllQuestions = async (req, res) => {
-    try {
-        const questions = await QuestionsModel.find()
-            .sort({ createdAt: -1 })
-            .populate("sub_categorie", "sub_name identifier type")
-            .populate("chapter", "chapter_name identifier type");
+  try {
+    let filter = {};
 
-        const formattedQuestions = questions.map((q) => {
-            return {
-                ...q.toObject(),
-                questionsCount: q.questions?.length || 0,
-                questions: undefined // এটি undefined বা delete করে দিলে frontend-এ পাঠাবে না
-            };
-        });
-
-        res.status(200).json(formattedQuestions);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: "Failed to fetch questions",
-            error
-        });
+    // যদি লগইন থাকে, participant ফিল্টার করে দেয়, যাতে ওই ইউজারের অংশগ্রহণকৃত exam বাদ পড়ে
+    if (req.user && req.user.id) {
+      filter = { participant: { $ne: req.user.id } };
     }
+
+    const questions = await QuestionsModel.find(filter)
+      .sort({ createdAt: -1 })
+      .populate("sub_categorie", "sub_name identifier type")
+      .populate("chapter", "chapter_name identifier type");
+
+    const formattedQuestions = questions.map((q) => {
+      return {
+        ...q.toObject(),
+        questionsCount: q.questions?.length || 0,
+        questions: undefined, // প্রশ্নগুলো না পাঠানোর জন্য
+      };
+    });
+
+    res.status(200).json(formattedQuestions);
+    
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Failed to fetch questions",
+      error,
+    });
+  }
 };
 
 
 
 
-// ✅ GET - Get Question by ID (single questions for exam)
+// ✅ GET - Get Question by ID by optionalAuth (middlewere) (single questions for exam)
 export const getQuestionById = async (req, res) => {
     const { questionId } = req.params;
 

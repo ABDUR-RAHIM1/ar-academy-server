@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const ResultsSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: "AuthAccount", required: true },
+    examInfo : { type: Object, required: true },
     results: { type: Array, required: true },
     correctAns: { type: String, required: true },
     wrongAns: { type: String, required: true },

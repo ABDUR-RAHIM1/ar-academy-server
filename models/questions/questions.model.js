@@ -45,6 +45,10 @@ const QuestionsItemSchema = new mongoose.Schema({
 
 const QuestionsSchema = new mongoose.Schema({
     //  subCategoire mean subject
+    participant: {
+        type: Array,
+        required: false
+    },
     sub_categorie: {
         type: mongoose.Schema.ObjectId,
         ref: "SubCategorie",

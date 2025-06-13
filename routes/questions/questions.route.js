@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Root =>  /api/questions
 router.post("/create", postQuestions);   // Admin question add
-router.get("/all", getAllQuestions);  // Admin + User fetch all
+router.get("/all", optionalAuth, getAllQuestions);  // Admin + User fetch all
 router.get("/one/:questionId", optionalAuth, getQuestionById);  // Get question by ID
 router.get("/relatedByTitle/:isAllTitle", getQuestionByIsAllTitle);  // Get question by ID
 

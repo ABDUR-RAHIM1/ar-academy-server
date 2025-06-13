@@ -1,3 +1,4 @@
+import QuestionsModel from "../../models/questions/questions.model.js";
 import ResultsModel from "../../models/results/results.model.js";
 
 
@@ -5,12 +6,27 @@ import ResultsModel from "../../models/results/results.model.js";
 // POST - Submit Question Paper
 export const submitQuestions = async (req, res) => {
 
-    const { results, correctAns, wrongAns, skip, totalQuestions } = req.body;
+    const { examInfo, results, correctAns, wrongAns, skip, totalQuestions } = req.body;
     const { id } = req.user
     try {
 
+
+        // ✅ Check if user already participated
+        const exam = await QuestionsModel.findById(examInfo.questionId);
+
+        if (!exam) {
+            return res.status(404).json({ message: "পরিক্ষা খুজে পাওয়া যায়নি" });
+        }
+
+        const alreadyParticipated = exam.participant?.includes(id);
+
+        if (alreadyParticipated) {
+            return res.status(400).json({ message: "তুমি পরীক্ষাটি একবার দিয়ে ফেলেছ!" });
+        }
+
         const newResult = new ResultsModel({
             user: id,
+            examInfo,
             results,
             correctAns,
             wrongAns,
@@ -20,11 +36,18 @@ export const submitQuestions = async (req, res) => {
 
         await newResult.save();
 
-        res.status(201).json({ message: "Question submitted successfully" });
+        // update participant list
+        await QuestionsModel.findByIdAndUpdate(
+            examInfo.questionId,
+            { $push: { participant: id } },
+            { new: true }
+        );
+
+        res.status(201).json({ message: "সফল ভাবে জমা দিয়েছো" });
 
     } catch (error) {
         res.status(500).json({
-            message: "Failed to submit question paper",
+            message: "পরিক্ষা জমা দিতে বার্থ হয়েছে!",
             error,
         });
     }
