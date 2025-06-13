@@ -73,6 +73,11 @@ const QuestionsSchema = new mongoose.Schema({
         type: [QuestionsItemSchema],
         required: true
     },
+    type: {
+        type: String,
+        enum: ["paid", "free"],
+        default: "free"
+    },
 
 }, { timestamps: true });
 

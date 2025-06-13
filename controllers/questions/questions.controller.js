@@ -1,16 +1,17 @@
+import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
-    const { isAll, isAllTitle, sub_categorie, chapter, questions } = req.body;
+    const { isAll, isAllTitle, sub_categorie, chapter, questions, type } = req.body;
 
     try {
 
         const newQuestions = new QuestionsModel(
             isAll
-                ? { isAll, isAllTitle, questions }
-                : { isAll, sub_categorie, chapter, questions }
+                ? { isAll, isAllTitle, questions, type }
+                : { isAll, sub_categorie, chapter, questions, type }
         );
 
         await newQuestions.save();
@@ -43,13 +44,20 @@ export const postQuestions = async (req, res) => {
 // ✅ GET - Fetch All Questions
 export const getAllQuestions = async (req, res) => {
     try {
-
         const questions = await QuestionsModel.find()
             .sort({ createdAt: -1 })
             .populate("sub_categorie", "sub_name identifier type")
             .populate("chapter", "chapter_name identifier type");
 
-        res.status(200).json(questions);
+        const formattedQuestions = questions.map((q) => {
+            return {
+                ...q.toObject(),
+                questionsCount: q.questions?.length || 0,
+                questions: undefined // এটি undefined বা delete করে দিলে frontend-এ পাঠাবে না
+            };
+        });
+
+        res.status(200).json(formattedQuestions);
     } catch (error) {
         console.error(error);
         res.status(500).json({
@@ -61,12 +69,15 @@ export const getAllQuestions = async (req, res) => {
 
 
 
-// ✅ GET - Get Question by ID
+
+// ✅ GET - Get Question by ID (single questions for exam)
 export const getQuestionById = async (req, res) => {
     const { questionId } = req.params;
 
     try {
 
+
+        // ✅ যদি ফ্রি হয় বা type না থাকে তাহলে ফ্রি হিসেবেই পাঠাও
         const question = await QuestionsModel.findById(questionId)
             .populate("sub_categorie", "sub_name identifier type")
             .populate("chapter", "chapter_name identifier type");
@@ -77,7 +88,25 @@ export const getQuestionById = async (req, res) => {
             });
         }
 
+
+        if (!question.type || question.type === "free") {
+            return res.status(200).json(question);
+        }
+
+        // ✅ পেইড হলে ইউজার লাগবে 
+        if (!req.user) {
+            return res.status(401).json({ message: " এই প্রশ্নে পরিক্ষা দিতে হলে তোমাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে" });
+        }
+
+        // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
+        const plan = await checkAndUpdatePurchasePlanStatus(req.user.id);
+
+        if (!plan || plan.status === "expired") {
+            return res.status(403).json({ message: "এই প্রশ্নে পরিক্ষা দিতে হলে তোমাকে প্ল্যান ক্রয় করতে হবে।" });
+        }
+
         res.status(200).json(question);
+
     } catch (error) {
         console.error(error);
         res.status(500).json({
