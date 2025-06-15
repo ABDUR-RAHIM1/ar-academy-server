@@ -68,7 +68,70 @@ export const purchasePlan = async (req, res) => {
     }
 };
 
- 
+
+//  admin can assign a plan for the user
+export const assignPlanByAdmin = async (req, res) => {
+    try {
+        const { userId, plan } = req.body;
+
+        // Validation
+        if (!userId || !plan || !plan.key || !plan.days) {
+            return res.status(400).json({ message: "Invalid data provided" });
+        }
+
+        // Check existing active plan
+        const isExitPurchase = await PurchasePlanModel.findOne({
+            user: userId,
+            status: 'active'
+        });
+
+        if (isExitPurchase) {
+            return res.status(400).json({
+                message: "User already has an active plan"
+            });
+        }
+
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + plan.days);
+
+        const newSubscription = new PurchasePlanModel({
+            user: userId,
+            planName: plan.key,
+            planLabel: plan.label,
+            price: plan.price || 0,
+            endDate,
+            paymentDetails: {
+                transactionId: "ADMIN-MANUAL",
+                paymentMethod: "ADMIN",
+                paymentStatus: "SUCCESS"
+            }
+        });
+
+        const subscription = await newSubscription.save();
+        console.log({ subscription })
+
+        await AccountModel.findByIdAndUpdate(userId, {
+            $set: {
+                plan: subscription._id
+            }
+        });
+
+        return res.status(201).json({
+            message: "Plan assigned to user successfully by admin."
+        });
+
+    } catch (error) {
+        console.error("Assign Plan by Admin Error:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+
+
+
+
 export const getAllPurchasePlan = async (req, res) => {
     try {
 
