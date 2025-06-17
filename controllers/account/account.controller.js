@@ -1,73 +1,122 @@
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
-import { adminSecretKey, secretKey } from "../../config/constans.js";
+import { adminSecretKey, backendUrl, clientUrl, jwtEmailSecret, secretKey } from "../../config/constans.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import { serverError } from "../../helpers/serverError.js";
+import { sendEmail } from "../../utils/email/email.js";
 
 //  register 
-export const registerAccount = async (req, res) => {
 
+export const registerAccount = async (req, res) => {
     const { plan, username, email, password, role, adminKey } = req.body;
 
-    //  All Fields Validation
+    // Validate input
     if (!username || !email || !password) {
-        return res.status(400).json({
-            message: "All Fields required"
-        })
+        return res.status(400).json({ message: "All Fields required" });
     }
 
-
-
     try {
-
-        // যদি ইউজার `admin` হয়, তাহলে secret key যাচাই করতে হবে
+        // Admin secret key check
         if (role === "admin") {
             if (!adminKey || adminKey !== adminSecretKey) {
-                return res.status(400).json({
-                    message: "Invalid Admin Secret Key"
-                })  // Unauthorized Request
+                return res.status(400).json({ message: "Invalid Admin Secret Key" });
             }
         }
 
-        //  Email Exist Check
+        // Check if email exists
         const isExist = await AccountModel.findOne({ email });
         if (isExist) {
-            return res.status(400).json({
-                message: "Email Already Exist"
-            })
+            return res.status(400).json({ message: "Email Already Exist" });
         }
 
-        //  New User Create
+        // Hash password
         const hashPassword = await bcrypt.hash(password, 10);
 
+        // Create new user (unverified)
         const newUser = new AccountModel({
             plan,
             username,
             email,
             password: hashPassword,
-            role
+            role,
+            isVerified: false,
         });
 
         const account = await newUser.save();
 
-        //  Token Generate
-        const accountToken = {
-            id: account._id.toString(),
-            username: account.username,
-            email: account.email,
-            role: account.role,
+        // Generate email verification token (valid 15 minutes)
+        const emailToken = jwt.sign(
+            { userId: account._id },
+            jwtEmailSecret,
+            { expiresIn: '15m' }
+        );
+
+        const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
+
+        const options = {
+            to: email,
+            subject: "Verify your email",
+            html: `
+            <h2>Hi ${username},</h2>
+            <p>Thanks for registering! Please verify your email by clicking the link below:</p>
+            <a href="${verificationLink}">Click Me to Verify Email</a>
+            <p>This link will expire in 15 minutes.</p>
+          `,
         };
 
-        const token = jwt.sign(accountToken, secretKey, { algorithm: 'HS256' })
+        try {
+            await sendEmail(options)
+        } catch (err) {
+            console.error("Email sending failed:", err.message);
+        }
 
-        res.json({ message: "Register successful!", token });
+        res.json({ message: "Register successful! Please check your email to verify your account." });
 
     } catch (error) {
-        console.log(error)
-        serverError(res, error)
+        console.error(error);
+        serverError(res, error);
     }
 };
+
+
+//  email verify 
+export const emailVerify = async (req, res) => {
+    const { token } = req.query;
+
+    try {
+        // Verify the token
+        const decoded = jwt.verify(token, jwtEmailSecret);
+
+        // Update the user's verification status
+        const updatedUser = await AccountModel.findByIdAndUpdate(
+            decoded.userId,
+            { isVerified: true },
+            { new: true }
+        );
+
+        // ✅ Generate login token
+        const loginToken = jwt.sign(
+            {
+                id: updatedUser._id.toString(),
+                username: updatedUser.username,
+                email: updatedUser.email,
+                role: updatedUser.role
+            },
+            secretKey,
+            { expiresIn: '7d' }
+        );
+
+        // ✅ Redirect to frontend success page with token
+        return res.redirect(`${clientUrl}/account/verify/success?token=${loginToken}`);
+    } catch (error) {
+        console.log(error
+        )
+        // Token expired or invalid
+        return res.redirect(`${clientUrl}/account/verify/failed`);
+    }
+};
+
 
 
 // login
@@ -85,15 +134,24 @@ export const loginAccount = async (req, res) => {
         // Email & Role Match Check
         const isAccount = await AccountModel.findOne({ email, role });
 
-        if (isAccount.status !== "active") {
-            return res.status(400).json({
-                message: `your account has been ${isAccount.status} , Please Contact With Admin`
-            })
-        }
-
+        // Check if account exists
         if (!isAccount) {
             return res.status(404).json({
                 message: "Invalid credentials (email or role mismatch)"
+            });
+        }
+
+        // Check if account is verified
+        if (!isAccount.isVerified) {
+            return res.status(403).json({
+                message: "Please verify your email address before logging in."
+            });
+        }
+
+        // Check if account status is not 'active'
+        if (isAccount.status !== "active") {
+            return res.status(400).json({
+                message: `Your account has been ${isAccount.status}. Please contact the admin.`
             });
         }
 
@@ -124,6 +182,7 @@ export const loginAccount = async (req, res) => {
         return serverError(res, error);
     }
 };
+
 
 
 //  get all for admin 

@@ -109,7 +109,6 @@ export const assignPlanByAdmin = async (req, res) => {
         });
 
         const subscription = await newSubscription.save();
-        console.log({ subscription })
 
         await AccountModel.findByIdAndUpdate(userId, {
             $set: {
