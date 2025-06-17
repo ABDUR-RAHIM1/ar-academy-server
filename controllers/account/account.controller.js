@@ -7,7 +7,6 @@ import { serverError } from "../../helpers/serverError.js";
 import { sendEmail } from "../../utils/email/email.js";
 
 //  register 
-
 export const registerAccount = async (req, res) => {
     const { plan, username, email, password, role, adminKey } = req.body;
 
@@ -56,7 +55,7 @@ export const registerAccount = async (req, res) => {
 
         const options = {
             to: email,
-            subject: "Verify your email",
+            subject: `Welcome ${username}! Please Verify Your Email`,
             html: `
             <h2>Hi ${username},</h2>
             <p>Thanks for registering! Please verify your email by clicking the link below:</p>
@@ -118,6 +117,74 @@ export const emailVerify = async (req, res) => {
 };
 
 
+// ✅ Resend Verification Email Controller
+export const resendVerificationEmail = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
+
+    try {
+        const user = await AccountModel.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "Account not found" });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: "Account is already verified" });
+        }
+
+        // নতুন verification token
+        const emailToken = jwt.sign(
+            { userId: user._id },
+            jwtEmailSecret,
+            { expiresIn: '15m' }
+        );
+
+        const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
+
+        const now = new Date().toLocaleString("en-US", {
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric',
+            hour12: true,
+            timeZone: 'Asia/Dhaka'
+        });
+
+        const emailOptions = {
+            to: email,
+            subject: `Resend Email Verification - ${now}`, // ✅ Subject includes time
+            html: `
+              <h2>Hi ${user.username},</h2>
+              <p>Please verify your email by clicking the link below:</p>
+              <a href="${verificationLink}">Click here to verify your email</a>
+              <p>This link will expire in 15 minutes.</p>
+              <hr/>
+              <p style="font-size: 12px; opacity: 0.6;">Token ID: ${emailToken.slice(-6)} | Time: ${now}</p>
+            `,
+        };
+
+        try {
+            await sendEmail(emailOptions);
+        } catch (err) {
+            console.error("Email sending failed:", err.message);
+            return res.status(500).json({ message: "Email sending failed" });
+        }
+
+        return res.status(200).json({ message: "Verification email sent, please check your inbox." });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
+
+
+
+
 
 // login
 export const loginAccount = async (req, res) => {
@@ -144,7 +211,8 @@ export const loginAccount = async (req, res) => {
         // Check if account is verified
         if (!isAccount.isVerified) {
             return res.status(403).json({
-                message: "Please verify your email address before logging in."
+                message: "Please verify your email address before logging in.",
+                code: "EMAIL_NOT_VERIFIED"
             });
         }
 
@@ -185,11 +253,14 @@ export const loginAccount = async (req, res) => {
 
 
 
-//  get all for admin 
+//  get all for user for admin 
 export const getAllUserForAdmin = async (req, res) => {
     try {
 
-        const accounts = await AccountModel.find().select("-password");
+        const accounts = await AccountModel.find({ role: "user" })
+            .select("-password")
+            .sort({ createdAt: -1 });
+
         return res.status(200).json(accounts)
 
     } catch (error) {
@@ -204,6 +275,7 @@ export const getAllAdmin = async (req, res) => {
 
         const admins = await AccountModel.find({ role: "admin" })
             .select("-password")
+            .sort({ createdAt: -1 });
 
         return res.status(200).json(admins)
 
@@ -375,7 +447,6 @@ export const updateAdminAccount = async (req, res) => {
 
 
 // delete User Account only for admin 
-// delete User Account only for admin 
 export const deleteUserAccount = async (req, res) => {
     const { accountId } = req.params;
 
@@ -386,7 +457,7 @@ export const deleteUserAccount = async (req, res) => {
             });
         }
 
-        // চেক করি এই account টা admin কিনা
+        // চেক করি এই account টা আছে কিনা
         const accountToDelete = await AccountModel.findById(accountId);
 
         if (!accountToDelete) {
@@ -397,8 +468,16 @@ export const deleteUserAccount = async (req, res) => {
 
         // যদি এই account টি admin হয়
         if (accountToDelete.role === "admin") {
-            const totalAdmins = await AccountModel.countDocuments({ role: "admin" });
 
+            // 🔒 যদি ইমেইল SUPER_ADMIN_EMAIL হয়
+            if (accountToDelete.email === "onushilona@gmail.com") {
+                return res.status(403).json({
+                    message: "এই অ্যাডমিন অ্যাকাউন্টটি ডিলিট করা যাবে না।"
+                });
+            }
+
+            // 🔒 যদি এটা শেষ admin হয়
+            const totalAdmins = await AccountModel.countDocuments({ role: "admin" });
             if (totalAdmins <= 1) {
                 return res.status(403).json({
                     message: "কমপক্ষে একজন অ্যাডমিন থাকা বাধ্যতামূলক।"
@@ -406,7 +485,7 @@ export const deleteUserAccount = async (req, res) => {
             }
         }
 
-        // তারপর ডিলিট করবো
+        // ✅ তারপর ডিলিট করবো
         await AccountModel.findByIdAndDelete(accountId);
 
         return res.status(200).json({

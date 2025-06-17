@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteUserAccount, emailVerify, getAllAdmin, getAllUserForAdmin, getSinglAdmin, getSingleUser, loginAccount, registerAccount, updateAdminAccount, updateMyAccount, updateUserAccount } from "../../controllers/account/account.controller.js";
+import { deleteUserAccount, emailVerify, getAllAdmin, getAllUserForAdmin, getSinglAdmin, getSingleUser, loginAccount, registerAccount, resendVerificationEmail, updateAdminAccount, updateMyAccount, updateUserAccount } from "../../controllers/account/account.controller.js";
 import { userVerify } from "../../middleware/userVerify.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 
@@ -10,6 +10,8 @@ const router = express.Router();
 router.post("/register", registerAccount);
 
 router.get("/verify-email", emailVerify ) // ata sudhu verify er shomoy cholbe 
+router.post("/resend-verification-email", resendVerificationEmail);
+
 
 router.post("/login", loginAccount);
 router.get("/user", userVerify, getSingleUser);
