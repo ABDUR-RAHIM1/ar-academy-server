@@ -40,7 +40,8 @@ const AccountSchema = new mongoose.Schema({
     },
     plan: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'PurchasePlan'
+        ref: 'PurchasePlan',
+        default: null
     },
     role: {
         type: String,

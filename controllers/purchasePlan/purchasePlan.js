@@ -13,16 +13,13 @@ export const purchasePlan = async (req, res) => {
         }
 
 
-        const isExitPurchase = await PurchasePlanModel.findOne({
-            user: id,
-            status: 'active'
-        });
+        // ✅ চেক করা হচ্ছে ইউজারের প্রোফাইলে আগে থেকেই কোনো প্ল্যান আছে কিনা
+        const user = await AccountModel.findById(id).select("plan");
 
-
-        if (isExitPurchase) {
-            return res.status(404).json({
-                message: "You have already Purchased One"
-            })
+        if (user?.plan) {
+            return res.status(400).json({
+                message: "You already have an active plan"
+            });
         }
 
 
@@ -127,10 +124,7 @@ export const assignPlanByAdmin = async (req, res) => {
 };
 
 
-
-
-
-
+// for admin (dashboard)
 export const getAllPurchasePlan = async (req, res) => {
     try {
 
@@ -145,48 +139,37 @@ export const getAllPurchasePlan = async (req, res) => {
 };
 
 
-// using in the user profile
+// ✅ Remove plan from user's account without deleting the plan document
 export const deleteMyPlan = async (req, res) => {
+    const { planId } = req.params;
     try {
-
-        const { planId } = req.params;
-
-        const isPlan = await PurchasePlanModel.findById(planId);
-
-        if (!isPlan) {
-            return res.status(404).json({
-                message: "Plan not found"
-            })
-        }
-
-        const isDeleted = await PurchasePlanModel.findByIdAndDelete(planId);
-
-        const updateUserAccount = await AccountModel.findByIdAndUpdate(isPlan.user, {
-            $unset: { plan: "" }
-        }, { new: true })
+        // Step 1: Just unset the user's current plan reference
+        await AccountModel.findByIdAndUpdate(
+            req.user.id,
+            { $unset: { plan: null } }, // or "" if your default is empty string
+            { new: true }
+        );
 
 
-        if (!isDeleted) {
-            return res.status(404).json({
-                message: "Plan already deleted or not found"
-            });
-        }
+        // Step 2: সাবস্ক্রিপশনটির status 'cancelled' করো
 
-        if (!updateUserAccount) {
-            return res.status(500).json({
-                message: "Failed to update user account"
-            });
+        const updated = await PurchasePlanModel.findByIdAndUpdate(
+            planId,
+            { $set: { status: "cancelled" } }
+        );
+
+        if (!updated) {
+            return res.status(404).json({ message: "Plan not found." });
         }
 
 
         return res.status(200).json({
-            message: "Deleted The  Successfully"
-        })
-
+            message: "আপনার প্ল্যান অপসারণ করা হয়েছে",
+        });
     } catch (error) {
-        console.log(error)
-        serverError(res, error)
+        console.log("Plan remove error:", error);
+        return serverError(res, error);
     }
-}
+};
 
 

@@ -82,6 +82,10 @@ const QuestionsSchema = new mongoose.Schema({
         enum: ["paid", "free"],
         default: "free"
     },
+    duration: {
+        type: Number,
+        required: true
+    }
 
 }, { timestamps: true });
 

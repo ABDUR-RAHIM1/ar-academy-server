@@ -4,14 +4,14 @@ import QuestionsModel from "../../models/questions/questions.model.js";
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
-    const { isAll, isAllTitle, sub_categorie, chapter, questions, type } = req.body;
+    const { isAll, isAllTitle, sub_categorie, chapter, questions, type, duration } = req.body;
 
     try {
 
         const newQuestions = new QuestionsModel(
             isAll
-                ? { isAll, isAllTitle, questions, type }
-                : { isAll, sub_categorie, chapter, questions, type }
+                ? { isAll, isAllTitle, questions, type, duration }
+                : { isAll, sub_categorie, chapter, questions, type, duration }
         );
 
         await newQuestions.save();
@@ -205,7 +205,7 @@ export const getQuestionByIsAllTitle = async (req, res) => {
 // ✅ PUT - Update a question by ID
 export const updateQuestionById = async (req, res) => {
     const { questionId } = req.params;
-    const { isAll, isAllTitle, sub_categorie, chapter, questions, type } = req.body;
+    const { isAll, isAllTitle, sub_categorie, chapter, questions, type, duration } = req.body;
 
     if (!questionId) {
         return res.status(400).json({ message: "Invalid Question ID" });
@@ -214,8 +214,8 @@ export const updateQuestionById = async (req, res) => {
     try {
         // participant ফিল্ড খালি করে দেওয়া হবে
         const updateData = isAll
-            ? { isAll, isAllTitle, questions, type, participant: [] }
-            : { isAll, sub_categorie, chapter, questions, type, participant: [] };
+            ? { isAll, isAllTitle, questions, type, participant: [], duration }
+            : { isAll, sub_categorie, chapter, questions, type, participant: [], duration };
 
         const updatedQuestion = await QuestionsModel.findByIdAndUpdate(
             questionId,
