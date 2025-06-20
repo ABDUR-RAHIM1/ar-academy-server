@@ -43,39 +43,38 @@ export const postQuestions = async (req, res) => {
 
 // ✅ GET - Fetch All Questions with optionalAuth (middlewere)
 export const getAllQuestions = async (req, res) => {
-  try {
-    let filter = {};
+    try {
+        let filter = {};
 
-    // যদি লগইন থাকে, participant ফিল্টার করে দেয়, যাতে ওই ইউজারের অংশগ্রহণকৃত exam বাদ পড়ে
-    if (req.user && req.user.id) {
-      filter = { participant: { $ne: req.user.id } };
+        // যদি লগইন থাকে, participant ফিল্টার করে দেয়, যাতে ওই ইউজারের অংশগ্রহণকৃত exam বাদ পড়ে
+        // শুধুমাত্র user রোল হলে participant ফিল্টার করবে, অন্য রোল হলে সব ডাটা দেখাবে
+        if (req.user && req.user.id && req.user.role === "user") {
+            filter = { participant: { $ne: req.user.id } };
+        }
+
+        const questions = await QuestionsModel.find(filter)
+            .sort({ createdAt: -1 })
+            .populate("sub_categorie", "sub_name identifier type")
+            .populate("chapter", "chapter_name identifier type");
+
+        const formattedQuestions = questions.map((q) => {
+            return {
+                ...q.toObject(),
+                questionsCount: q.questions?.length || 0,
+                questions: undefined, // প্রশ্নগুলো না পাঠানোর জন্য
+            };
+        });
+
+        res.status(200).json(formattedQuestions);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Failed to fetch questions",
+            error,
+        });
     }
-
-    const questions = await QuestionsModel.find(filter)
-      .sort({ createdAt: -1 })
-      .populate("sub_categorie", "sub_name identifier type")
-      .populate("chapter", "chapter_name identifier type");
-
-    const formattedQuestions = questions.map((q) => {
-      return {
-        ...q.toObject(),
-        questionsCount: q.questions?.length || 0,
-        questions: undefined, // প্রশ্নগুলো না পাঠানোর জন্য
-      };
-    });
-
-    res.status(200).json(formattedQuestions);
-    
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Failed to fetch questions",
-      error,
-    });
-  }
 };
-
-
 
 
 // ✅ GET - Get Question by ID by optionalAuth (middlewere) (single questions for exam)
@@ -206,24 +205,22 @@ export const getQuestionByIsAllTitle = async (req, res) => {
 // ✅ PUT - Update a question by ID
 export const updateQuestionById = async (req, res) => {
     const { questionId } = req.params;
-    const { sub_categorie, questions } = req.body;
+    const { isAll, isAllTitle, sub_categorie, chapter, questions, type } = req.body;
 
     if (!questionId) {
         return res.status(400).json({ message: "Invalid Question ID" });
     }
 
     try {
+        // participant ফিল্ড খালি করে দেওয়া হবে
+        const updateData = isAll
+            ? { isAll, isAllTitle, questions, type, participant: [] }
+            : { isAll, sub_categorie, chapter, questions, type, participant: [] };
 
         const updatedQuestion = await QuestionsModel.findByIdAndUpdate(
             questionId,
-            {
-                $set: {
-                    sub_categorie,
-                    chapter,
-                    questions
-                }
-            },
-            { new: true } // return updated document
+            { $set: updateData },
+            { new: true }
         );
 
         if (!updatedQuestion) {
@@ -231,7 +228,8 @@ export const updateQuestionById = async (req, res) => {
         }
 
         res.status(200).json({
-            message: "Question updated successfully"
+            message: "Question updated successfully",
+            updatedQuestion,
         });
 
     } catch (error) {
@@ -242,6 +240,7 @@ export const updateQuestionById = async (req, res) => {
         });
     }
 };
+
 
 // ✅ DELETE - Delete Question by ID
 export const deleteQuestionById = async (req, res) => {
