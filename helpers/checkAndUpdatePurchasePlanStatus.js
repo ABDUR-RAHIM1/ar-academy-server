@@ -3,9 +3,9 @@ import PurchasePlanModel from "../models/purchasePlan/purchasePlan.js";
 
 
 // ইউজার আইডি দিয়ে প্ল্যান চেক করে স্ট্যাটাস আপডেট করবে
-export const checkAndUpdatePurchasePlanStatus = async (userId) => {
+export const checkAndUpdatePurchasePlanStatus = async (planId) => {
     try {
-        const plan = await PurchasePlanModel.findOne({ user: userId });
+        const plan = await PurchasePlanModel.findById(planId);
 
         if (!plan) return null;
 

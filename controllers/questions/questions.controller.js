@@ -1,4 +1,5 @@
 import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
+import AccountModel from "../../models/accounts/account.model.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 
 
@@ -41,7 +42,9 @@ export const postQuestions = async (req, res) => {
     }
 };
 
-// ✅ GET - Fetch All Questions with optionalAuth (middlewere)
+
+
+// ✅ GET - Fetch All Questions with optionalAuth (middlewere) participant
 export const getAllQuestions = async (req, res) => {
     try {
         let filter = {};
@@ -77,6 +80,8 @@ export const getAllQuestions = async (req, res) => {
 };
 
 
+
+
 // ✅ GET - Get Question by ID by optionalAuth (middlewere) (single questions for exam)
 export const getQuestionById = async (req, res) => {
     const { questionId } = req.params;
@@ -105,10 +110,19 @@ export const getQuestionById = async (req, res) => {
             return res.status(401).json({ message: " এই প্রশ্নে পরিক্ষা দিতে হলে তোমাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে" });
         }
 
-        // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
-        const plan = await checkAndUpdatePurchasePlanStatus(req.user.id);
+        // ✅ ইউজার ডাটাবেজ থেকে আনো (কারণ req.user এ plan নেই)
+        const user = await AccountModel.findById(req.user.id);
 
-        if (!plan || plan.status === "expired") {
+        if (!user || !user.plan) {
+            return res.status(403).json({
+                message: "তুমি কোন প্ল্যান ক্রয় করোনি, প্রিমিয়াম প্ল্যান না থাকলে পেইড প্রশ্নে প্রবেশাধিকার নেই।"
+            });
+        }
+
+        // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
+        const plan = await checkAndUpdatePurchasePlanStatus(user.plan);
+
+        if (!plan || plan.status !== "active") {
             return res.status(403).json({ message: "এই প্রশ্নে পরিক্ষা দিতে হলে তোমাকে প্ল্যান ক্রয় করতে হবে।" });
         }
 
@@ -122,6 +136,8 @@ export const getQuestionById = async (req, res) => {
         });
     }
 };
+
+
 
 // ✅ GET - Get Question by Chapter ID
 export const getQuestionByChapterId = async (req, res) => {
@@ -148,6 +164,7 @@ export const getQuestionByChapterId = async (req, res) => {
         });
     }
 };
+
 
 
 // ✅ GET - Get Questions by isAllTitle filter (partial match)
@@ -202,6 +219,7 @@ export const getQuestionByIsAllTitle = async (req, res) => {
 
 
 
+
 // ✅ PUT - Update a question by ID
 export const updateQuestionById = async (req, res) => {
     const { questionId } = req.params;
@@ -214,8 +232,14 @@ export const updateQuestionById = async (req, res) => {
     try {
         // participant ফিল্ড খালি করে দেওয়া হবে
         const updateData = isAll
-            ? { isAll, isAllTitle, questions, type, participant: [], duration }
-            : { isAll, sub_categorie, chapter, questions, type, participant: [], duration };
+            ? { isAll, isAllTitle, type, participant: [], duration }
+            : { isAll, sub_categorie, chapter, type, participant: [], duration };
+
+
+        // যদি questions আসে এবং non-empty হয়, তাহলে updateData তে add করো
+        if (Array.isArray(questions) && questions.length > 0) {
+            updateData.questions = questions;
+        }
 
         const updatedQuestion = await QuestionsModel.findByIdAndUpdate(
             questionId,
@@ -240,6 +264,7 @@ export const updateQuestionById = async (req, res) => {
         });
     }
 };
+
 
 
 // ✅ DELETE - Delete Question by ID
