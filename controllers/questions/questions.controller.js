@@ -29,7 +29,7 @@ export const postQuestions = async (req, res) => {
             Object.keys(error.errors).forEach(field => {
                 errors[field] = error.errors[field].message;
             });
-
+            
             return res.status(400).json({
                 message: "Validation Failed",
                 errors: errors
