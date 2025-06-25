@@ -79,17 +79,22 @@ export const getMergedQuestions = async (req, res) => {
 
         const regex = new RegExp(search, "i");
 
-        // Step 1: সব প্রশ্ন একত্র করা (QuestionsModel + solutionTable from ChaptersModel)
+
+
+        // Step 2: সব প্রশ্ন একত্র করা (QuestionsModel + solutionTable from ChaptersModel)
         const [directQuestions, chapterDocs] = await Promise.all([
             QuestionsModel.find().lean(),
             ChaptersModel.find({ fileType: "file" }).lean()
         ]);
 
+        //  directQuestions থেকে শুধু প্রশ্নগুলো বের করা
+        const directQuestionsFlat = directQuestions.flatMap(dq => dq.questions || []);
+
         const chapterQuestions = chapterDocs.flatMap(chapter =>
             chapter.solutionTable || []
         );
 
-        const allQuestions = [...directQuestions, ...chapterQuestions];
+        const allQuestions = [...directQuestionsFlat, ...chapterQuestions];
 
 
         // // Step 2: একবারেই সার্চ ফিল্টার
@@ -103,7 +108,7 @@ export const getMergedQuestions = async (req, res) => {
             regex.test(q.Subject || "") ||
             regex.test(q.Explanation || "")
         );
- 
+
 
         //  alternative
         // const filteredQuestions = allQuestions.filter(q =>
