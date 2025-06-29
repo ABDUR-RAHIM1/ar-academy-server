@@ -1,5 +1,6 @@
 import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
 import { createSlug } from "../../helpers/createSlug.js";
+import AccountModel from "../../models/accounts/account.model.js";
 import ChaptersModel from "../../models/chapters/chapter.model.js";
 import SubjectModel from "../../models/sub-categorie/sub-categorie.model.js";
 
@@ -13,7 +14,7 @@ export const createChapter = async (req, res) => {
     }
 
     const slug = createSlug(chapter_name);
-    
+
     try {
 
         const exist = await ChaptersModel.findOne({ identifier: slug });
@@ -70,7 +71,7 @@ export const getAllChapters = async (req, res) => {
 };
 
 
-//  get Chapter contents Using By Sub Categorie Identifier
+//  get Chapter contents Using By Sub Categorie Identifier based on free or paid
 export const getChapterByIdentifier = async (req, res) => {
     const { subIdentifier } = req.params;
 
@@ -94,14 +95,27 @@ export const getChapterByIdentifier = async (req, res) => {
 
         // ✅ পেইড হলে ইউজার লাগবে 
         if (!req.user) {
-            return res.status(401).json({ message: "এই অধ্যায় দেখতে হলে আপনাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে" });
+            return res.status(401).json({
+                message: "এই অধ্যায় দেখতে হলে আপনাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে।"
+            });
+        }
+
+        // ✅ ইউজার ডাটাবেজ থেকে আনো কারণ req.user এ plan নেই
+        const user = await AccountModel.findById(req.user.id);
+
+        if (!user || !user.plan) {
+            return res.status(403).json({
+                message: "তুমি কোন প্ল্যান ক্রয় করোনি, প্রিমিয়াম প্ল্যান না থাকলে এই অধ্যায়ে প্রবেশাধিকার নেই।"
+            });
         }
 
         // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
-        const plan = await checkAndUpdatePurchasePlanStatus(req.user.id);
+        const plan = await checkAndUpdatePurchasePlanStatus(user.plan);
 
-        if (!plan || plan.status === "expired") {
-            return res.status(403).json({ message: "এই অধ্যায়টি দেখতে হলে আপনাকে প্ল্যান ক্রয় করতে হবে।" });
+        if (!plan || plan.status !== "active") {
+            return res.status(403).json({
+                message: "এই অধ্যায়টি দেখতে হলে আপনাকে প্ল্যান ক্রয় করতে হবে।"
+            });
         }
 
         // ✅ সব ঠিক থাকলে চ্যাপ্টার পাঠাও
@@ -109,7 +123,7 @@ export const getChapterByIdentifier = async (req, res) => {
 
     } catch (error) {
         console.error("Chapter fetch failed:", error);
-        res.status(500).json({ message: "Chapter Fetch Failed" });
+        res.status(500).json({ message: "Chapter Fetch Failed", error });
     }
 };
 
