@@ -17,6 +17,7 @@ import utilsRouter from "./routes/utils/utils.route.js";
 import planRouter from "./routes/plan/plan.route.js";
 
 export const app = express()
+app.set('trust proxy', 1);
 
 app.use(cors())
 app.use(express.urlencoded({ extended: true }));
