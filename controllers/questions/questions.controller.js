@@ -81,7 +81,6 @@ export const getAllQuestions = async (req, res) => {
 
 
 
-
 // ✅ GET - Get Question by ID by optionalAuth (middlewere) (single questions for exam)
 export const getQuestionById = async (req, res) => {
     const { questionId } = req.params;

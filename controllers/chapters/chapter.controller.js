@@ -88,6 +88,11 @@ export const getChapterByIdentifier = async (req, res) => {
             return res.status(404).json({ message: "Chapter not found" });
         }
 
+        // ✅ Admin হলে কোন paid-unpaid check লাগবে না
+        if (req.user?.role === "admin") {
+            return res.status(200).json(chapter);
+        }
+
         // ✅ যদি ফ্রি হয় বা type না থাকে তাহলে ফ্রি হিসেবেই পাঠাও
         if (!chapter.type || chapter.type === "free") {
             return res.status(200).json(chapter);
