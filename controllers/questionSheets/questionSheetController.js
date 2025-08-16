@@ -37,20 +37,59 @@ export const addQuestionsSheet = async (req, res) => {
 
 
 
-// Get all question sheets
+// Get all question sheets info (without questions List) for Dashboard 
 export const getAllQuestionsSheets = async (req, res) => {
     try {
         const sheets = await QuestionsSheetModel.find()
+            .select("classId subjectId chapterId questions") // questions রাখবো কিন্তু শুধু length বের করার জন্য
             .populate("classId", "name")
             .populate("subjectId", "name")
-            .populate("chapterId", "name title");
+            .populate("chapterId", "name title")
+            .lean(); // plain JS object ফেরত পাবে
 
-        res.status(200).json(sheets);
+        // এখন questions array বাদ দিয়ে শুধু count পাঠাবো
+        const formattedSheets = sheets.map(sheet => ({
+            ...sheet,
+            questionsCount: sheet.questions?.length || 0,
+            questions: undefined // পুরো array বাদ
+        }));
+
+        res.status(200).json(formattedSheets);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+
+//  get single questionSheet by _id
+export const getQuestionSheetById = async (req, res) => {
+    try {
+
+        const { qSheetId } = req.params;
+
+        const questionsSheet = await QuestionsSheetModel.findById(qSheetId)
+            .populate("classId", "name")
+            .populate("subjectId", "name")
+            .populate("chapterId", "name title")
+            .lean();
+
+
+        if (!questionsSheet) {
+            return res.status(404).json({
+                message: "প্রস্নপত্র খুজে পাওয়া যায়নি"
+            })
+        };
+
+        res.status(200).json(questionsSheet)
+
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
 
 // Get questions sheets by query (filter by classId, subjectId, chapterId)
 export const getQuestionsSheetsByQuery = async (req, res) => {

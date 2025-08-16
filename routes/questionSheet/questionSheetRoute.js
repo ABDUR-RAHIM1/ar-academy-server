@@ -3,7 +3,7 @@ import express from "express";
 import { addClassList, deleteClassList, getAllClassList, updateClassList } from "../../controllers/questionSheets/classListController.js";
 import { addSubjectList, deleteSubjectList, getAllSubjectList, getSubjectByQuery, updateSubjectList } from "../../controllers/questionSheets/subjectListController.js";
 import { addChapters, deleteChapter, getAllChapters, getChaptersBySubjectId, updateChapter } from "../../controllers/questionSheets/chapterListController.js";
-import { addQuestionsSheet, deleteQuestionsSheet, getAllQuestionsSheets, getQuestionsSheetsByQuery, updateQuestionsSheet } from "../../controllers/questionSheets/questionSheetController.js";
+import { addQuestionsSheet, deleteQuestionsSheet, getAllQuestionsSheets, getQuestionSheetById, getQuestionsSheetsByQuery, updateQuestionsSheet } from "../../controllers/questionSheets/questionSheetController.js";
 
 const router = express.Router();
 
@@ -35,7 +35,8 @@ router.delete("/chapterList/delete/:chapterId", deleteChapter);
 
 //  Question Sheet
 router.post("/questionSheet/create", addQuestionsSheet);
-router.get("/questionSheet/get-all", getAllQuestionsSheets);
+router.get("/questionSheet/get-all", getAllQuestionsSheets); // without questions list
+router.get("/questionSheet/getById/:qSheetId", getQuestionSheetById); // with questions list
 router.get("/questionSheet/getByQuery", getQuestionsSheetsByQuery) // search filter
 router.put("/questionSheet/update/:subjectId", updateQuestionsSheet);
 router.delete("/questionSheet/delete/:subjectId", deleteQuestionsSheet);
