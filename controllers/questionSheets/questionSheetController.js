@@ -2,43 +2,48 @@ import QuestionsSheetModel from "../../models/questionSheets/QuestionSheetsModel
 
 
 
-export const addQuestionsSheet = async (req, res) => {
-    try {
-        const { classId, subjectId, chapterId, questions } = req.body;
+// export const addQuestionsSheet = async (req, res) => {
+//     try {
+//         const { classId, subjectId, chapterId, questions } = req.body;
 
-        // Validation
-        if (!classId || !subjectId || !chapterId) {
-            return res.status(400).json({ message: "classId, subjectId and chapterId are required" });
-        }
+//         // Validation
+//         if (!classId || !subjectId || !chapterId) {
+//             return res.status(400).json({ message: "classId, subjectId and chapterId are required" });
+//         }
 
-        if (!Array.isArray(questions) || questions.length === 0) {
-            return res.status(400).json({ message: "Questions array is required and cannot be empty" });
-        }
+//         if (!Array.isArray(questions) || questions.length === 0) {
+//             return res.status(400).json({ message: "Questions array is required and cannot be empty" });
+//         }
 
-        // Create new QuestionsSheet document
-        const newSheet = new QuestionsSheetModel({
-            classId,
-            subjectId,
-            chapterId,
-            questions
-        });
+//         // Create new QuestionsSheet document
+//         const newSheet = new QuestionsSheetModel({
+//             classId,
+//             subjectId,
+//             chapterId,
+//             questions
+//         });
 
-        const savedSheet = await newSheet.save();
+//         const savedSheet = await newSheet.save();
 
-        res.status(201).json({
-            message: "Questions sheet created successfully",
-            data: savedSheet
-        });
-    } catch (error) {
-        console.error("Error creating questions sheet:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
+//         res.status(201).json({
+//             message: "Questions sheet created successfully",
+//             data: savedSheet
+//         });
+//     } catch (error) {
+//         console.error("Error creating questions sheet:", error);
+//         res.status(500).json({ message: "Server error", error: error.message });
+//     }
+// };
+
 
 
 
 // Get all question sheets info (without questions List) for Dashboard 
+
+
+//  get all questinos overview withou questions Lists
 export const getAllQuestionsSheets = async (req, res) => {
+    // Get all question sheets info (without questions List) for Dashboard 
     try {
         const sheets = await QuestionsSheetModel.find()
             .select("classId subjectId chapterId questions") // questions রাখবো কিন্তু শুধু length বের করার জন্য
@@ -60,6 +65,51 @@ export const getAllQuestionsSheets = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+export const addQuestionsSheet = async (req, res) => {
+    try {
+        const { classId, subjectId, chapterId, questions } = req.body;
+
+        // Validation
+        if (!classId || !subjectId || !chapterId) {
+            return res.status(400).json({ message: "classId, subjectId and chapterId are required" });
+        }
+
+        if (!Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ message: "Questions array is required and cannot be empty" });
+        }
+
+        // Check if sheet already exists for this chapter
+        let sheet = await QuestionsSheetModel.findOne({ chapterId });
+
+        if (!sheet) {
+            // New sheet create
+            sheet = new QuestionsSheetModel({
+                classId,
+                subjectId,
+                chapterId,
+                questions
+            });
+        } else {
+            // Existing sheet এ নতুন questions push করো
+            sheet.questions.push(...questions);
+        }
+
+        const savedSheet = await sheet.save();
+
+        res.status(201).json({
+            message: sheet.isNew
+                ? "নতুন প্রশ্নপত্র সফলভাবে তৈরি হয়েছে"
+                : "প্রশ্নগুলো বিদ্যমান শীটে যোগ হয়েছে",
+            data: savedSheet
+        });
+    } catch (error) {
+        console.error("Error creating questions sheet:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
 
 
 //  get single questionSheet by _id
@@ -93,29 +143,38 @@ export const getQuestionSheetById = async (req, res) => {
 
 // Get questions sheets by query (filter by classId, subjectId, chapterId)
 export const getQuestionsSheetsByQuery = async (req, res) => {
-    try {
-        const { classId, subjectId, chapterId } = req.query;
+  try {
+    const { classId, subjectId, chapterId } = req.query;
 
-        if (!classId && !subjectId && !chapterId) {
-            return res.status(400).json({ message: "At least one query parameter required (classId, subjectId or chapterId)" });
-        }
-
-        const filter = {};
-        if (classId) filter.classId = classId;
-        if (subjectId) filter.subjectId = subjectId;
-        if (chapterId) filter.chapterId = chapterId;
-
-        const sheets = await QuestionsSheetModel.find(filter)
-            .populate("classId", "name")
-            .populate("subjectId", "name")
-            .populate("chapterId", "name title");
-
-        res.status(200).json(sheets);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error", error: error.message });
+    if (!classId && !subjectId && !chapterId) {
+      return res.status(400).json({
+        message:
+          "কমপক্ষে একটি query parameter দিতে হবে (classId, subjectId অথবা chapterId)",
+      });
     }
+
+    const filter = {};
+    if (classId) filter.classId = classId;
+    if (subjectId) filter.subjectId = subjectId;
+    if (chapterId) filter.chapterId = chapterId;
+
+    // findOne ব্যবহার করা হচ্ছে
+    const sheet = await QuestionsSheetModel.findOne(filter)
+      .populate("classId", "name")
+      .populate("subjectId", "name")
+      .populate("chapterId", "name title");
+
+    if (!sheet) {
+      return res.status(404).json({ message: "কোন প্রশ্নপত্র পাওয়া যায়নি" });
+    }
+
+    res.status(200).json(sheet);
+  } catch (error) {
+    console.error("Error fetching sheet:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };
+
 
 // Update questions sheet by id
 export const updateQuestionsSheet = async (req, res) => {
