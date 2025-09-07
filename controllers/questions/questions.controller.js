@@ -5,14 +5,14 @@ import QuestionsModel from "../../models/questions/questions.model.js";
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
-    const { isAll, isAllTitle, sub_categorie, chapter, questions, type, duration } = req.body;
+    const { isAll, isAllTitle, sub_categorie, chapter, type, duration, startDate, startTime, questions } = req.body;
 
     try {
 
         const newQuestions = new QuestionsModel(
             isAll
-                ? { isAll, isAllTitle, questions, type, duration }
-                : { isAll, sub_categorie, chapter, questions, type, duration }
+                ? { isAll, isAllTitle, questions, type, duration, startDate, startTime }
+                : { isAll, sub_categorie, chapter, questions, type, duration, startDate, startTime }
         );
 
         await newQuestions.save();
@@ -29,7 +29,7 @@ export const postQuestions = async (req, res) => {
             Object.keys(error.errors).forEach(field => {
                 errors[field] = error.errors[field].message;
             });
-            
+
             return res.status(400).json({
                 message: "Validation Failed",
                 errors: errors

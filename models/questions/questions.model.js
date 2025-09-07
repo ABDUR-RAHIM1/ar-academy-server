@@ -73,10 +73,6 @@ const QuestionsSchema = new mongoose.Schema({
             return this.isAll; // যদি all  হয়, তাহলে isAllTitle লাগবে
         }
     },
-    questions: {
-        type: [QuestionsItemSchema],
-        required: true
-    },
     type: {
         type: String,
         enum: ["paid", "free"],
@@ -85,7 +81,19 @@ const QuestionsSchema = new mongoose.Schema({
     duration: {
         type: Number,
         required: true
-    }
+    },
+    startDate: {
+        type: Date,
+        required: true
+    },
+    startTime: {
+        type: String,
+        required: true
+    },
+    questions: {
+        type: [QuestionsItemSchema],
+        required: true
+    },
 
 }, { timestamps: true });
 
