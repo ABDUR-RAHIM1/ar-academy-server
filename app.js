@@ -16,6 +16,7 @@ import purchaseRouter from "./routes/purchasePlan/purchasePlan.js";
 import utilsRouter from "./routes/utils/utils.route.js";
 import planRouter from "./routes/plan/plan.route.js";
 import questionSheetRouter from "./routes/questionSheet/questionSheetRoute.js";
+import courseRouter from "./routes/course/courseRoute.js";
 
 export const app = express()
 app.set('trust proxy', 1);
@@ -46,6 +47,7 @@ app.use("/api/questions", questionsRouter)
 app.use("/api/results", resultsRouter)
 app.use("/api/comment", commentRouter)
 app.use("/api/plan", planRouter)
+app.use("/api/course", courseRouter)
 app.use("/api/purchase", purchaseRouter)
 
 //  questions Sheets
