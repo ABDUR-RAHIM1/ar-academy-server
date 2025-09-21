@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
 
-const PurchasePlanSchema = new mongoose.Schema({
+const PurchaseCourseSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'AuthAccount', required: true },
-    planName: { type: String, required: true },
-    planLabel: { type: String },
-    price: { type: Number, required: true },
+    course: { type: mongoose.Schema.Types.ObjectId, ref: 'Courses', required: true },
     purchaseDate: { type: Date, default: Date.now },
     endDate: { type: Date, required: true },
     status: { type: String, enum: ['active', 'expired', 'cancelled'], default: 'active' },
@@ -15,5 +13,5 @@ const PurchasePlanSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-const PurchasePlanModel = mongoose.model('PurchasePlan', PurchasePlanSchema);
-export default PurchasePlanModel;
+const PurchaseCourseModel = mongoose.model('PurchaseCourse', PurchaseCourseSchema);
+export default PurchaseCourseModel;

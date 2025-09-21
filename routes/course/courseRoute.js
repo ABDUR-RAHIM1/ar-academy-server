@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post("/create", adminVerify, createCourse);
 router.get("/all", getAllCoursesList);
-router.get("/single", getSignlecourse);
+router.get("/single/:courseId", getSignlecourse);
 router.put("/update/:courseId", adminVerify, updateCourse);
 router.delete("/delete/:courseId", adminVerify, deleteCourse);
 

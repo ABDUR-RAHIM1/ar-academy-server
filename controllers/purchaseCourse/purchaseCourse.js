@@ -1,73 +1,71 @@
+
 import { serverError } from "../../helpers/serverError.js";
 import AccountModel from "../../models/accounts/account.model.js";
-import PurchasePlanModel from "../../models/purchasePlan/purchasePlan.js";
+import CourseModel from "../../models/courses/courseModel.js";
+import PurchaseCourseModel from "../../models/purchaseCourse/purchaseCourse.js";
 
 
-export const purchasePlan = async (req, res) => {
+export const createPurchaseCourse = async (req, res) => {
     try {
-        const { plan } = req.body;
+        const { courseId } = req.body;
         const { id } = req.user;
 
-        if (!plan || !plan.key || !plan.days) {
-            return res.status(400).json({ message: "Invalid plan data" });
+        if (!courseId) {
+            return res.status(400).json({ message: "Invalid course data" });
         }
 
+        // কোর্স খুঁজে বের করো
+        const course = await CourseModel.findById(courseId);
 
-        // ✅ চেক করা হচ্ছে ইউজারের প্রোফাইলে আগে থেকেই কোনো প্ল্যান আছে কিনা
-        const user = await AccountModel.findById(id).select("plan");
-
-        if (user?.plan) {
-            return res.status(400).json({
-                message: "You already have an active plan"
-            });
+        if (!course) {
+            return res.status(404).json({ message: "Course not found" });
         }
 
+        // ধরুন course.duration মাস হিসেবে আছে
+        const durationMonths = Number(course.duration) || 1; // default 1 month if not found
 
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setMonth(startDate.getMonth() + durationMonths);
 
-        //  pore ata delete korte hobe
+        // ডেমো payment details
         const demoDetails = {
             transactionId: "DXN0193121",
             paymentMethod: "BKASH",
-            paymentStatus: "SUCESS",
-        }
+            paymentStatus: "SUCCESS",
+        };
 
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(startDate.getDate() + plan.days);
-
-        // subscription তৈরি করো
-        const newSubscription = new PurchasePlanModel({
-            user: id, // user id form middlewere
-            planName: plan.key,
-            planLabel: plan.label,
-            price: plan.price,
+        // নতুন subscription তৈরি
+        const newSubscription = new PurchaseCourseModel({
+            user: id,
+            course: courseId,
+            startDate,
             endDate,
-            paymentDetails: plan.paymentDetails || demoDetails
-
+            paymentDetails: demoDetails, // পরে গেটওয়ে থেকে আসবে
         });
 
         const subscription = await newSubscription.save();
 
+        // user এর অ্যাকাউন্টে সাবস্ক্রিপশন রেফারেন্স আপডেট
         await AccountModel.findByIdAndUpdate(id, {
-            $set: {
-                plan: subscription._id
-            }
-        })
+            $addToSet: { courses: courseId },
+            $set: { userTypePremium: true },
 
-
-        return res.status(201).json({
-            message: "Subscription purchased successfully"
         });
 
+        return res.status(201).json({
+            message: "Course purchased successfully",
+            subscription,
+        });
     } catch (error) {
-        console.error("Purchase Plan Error:", error);
-        return serverError(res, error)
+        console.error("Purchase Course Error:", error);
+        return serverError(res, error);
     }
 };
 
 
 //  admin can assign a plan for the user
-export const assignPlanByAdmin = async (req, res) => {
+export const assignCourseByAdmin = async (req, res) => {
     try {
         const { userId, plan } = req.body;
 
@@ -77,7 +75,7 @@ export const assignPlanByAdmin = async (req, res) => {
         }
 
         // Check existing active plan
-        const isExitPurchase = await PurchasePlanModel.findOne({
+        const isExitPurchase = await PurchaseCourseModel.findOne({
             user: userId,
             status: 'active'
         });
@@ -92,7 +90,7 @@ export const assignPlanByAdmin = async (req, res) => {
         const endDate = new Date();
         endDate.setDate(startDate.getDate() + plan.days);
 
-        const newSubscription = new PurchasePlanModel({
+        const newSubscription = new PurchaseCourseModel({
             user: userId,
             planName: plan.key,
             planLabel: plan.label,
@@ -125,10 +123,10 @@ export const assignPlanByAdmin = async (req, res) => {
 
 
 // for admin (dashboard)
-export const getAllPurchasePlan = async (req, res) => {
+export const getAllPurchaseCourse = async (req, res) => {
     try {
 
-        const purchaseAll = await PurchasePlanModel.find()
+        const purchaseAll = await PurchaseCourseModel.find()
             .populate("user", "username email _id")
 
         res.status(200).json(purchaseAll)
@@ -140,7 +138,7 @@ export const getAllPurchasePlan = async (req, res) => {
 
 
 // ✅ Remove plan from user's account without deleting the plan document
-export const deleteMyPlan = async (req, res) => {
+export const deleteMyCourse = async (req, res) => {
     const { planId } = req.params;
     try {
         // Step 1: Just unset the user's current plan reference
@@ -153,7 +151,7 @@ export const deleteMyPlan = async (req, res) => {
 
         // Step 2: সাবস্ক্রিপশনটির status 'cancelled' করো
 
-        const updated = await PurchasePlanModel.findByIdAndUpdate(
+        const updated = await PurchaseCourseModel.findByIdAndUpdate(
             planId,
             { $set: { status: "cancelled" } }
         );

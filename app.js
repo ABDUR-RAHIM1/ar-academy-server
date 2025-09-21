@@ -11,12 +11,12 @@ import subCategorieRouter from "./routes/sub-categories/sub-categories.route.js"
 import chapterRouter from "./routes/chapters/chapters.route.js";
 import questionsRouter from "./routes/questions/questions.route.js";
 import resultsRouter from "./routes/results/results.route.js";
-import commentRouter from "./routes/comments/comments.route.js";
-import purchaseRouter from "./routes/purchasePlan/purchasePlan.js";
+import commentRouter from "./routes/comments/comments.route.js"; 
 import utilsRouter from "./routes/utils/utils.route.js";
 import planRouter from "./routes/plan/plan.route.js";
 import questionSheetRouter from "./routes/questionSheet/questionSheetRoute.js";
 import courseRouter from "./routes/course/courseRoute.js";
+import purchaseRouter from "./routes/purchaseCourse/purchaseCourse.js";
 
 export const app = express()
 app.set('trust proxy', 1);

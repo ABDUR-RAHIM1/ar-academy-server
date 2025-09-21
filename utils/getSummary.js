@@ -3,7 +3,8 @@ import AccountModel from "../models/accounts/account.model.js";
 import CategorieModel from "../models/categories/categoriesModel.js";
 import ChaptersModel from "../models/chapters/chapter.model.js";
 import CommentModel from "../models/comments/comments.model.js";
-import PurchasePlanModel from "../models/purchasePlan/purchasePlan.js";
+import PurchaseCourseModel from "../models/purchaseCourse/purchaseCourse.js";
+// import PurchasePlanModel from "../models/purchasePlan/purchasePlan.js";
 import QuestionsModel from "../models/questions/questions.model.js";
 import ResultsModel from "../models/results/results.model.js";
 import SubjectModel from "../models/sub-categorie/sub-categorie.model.js";
@@ -15,7 +16,7 @@ export const getCourseSummary = async (req, res) => {
         const subCategoriesCount = await SubjectModel.countDocuments();
         const chaptersCount = await ChaptersModel.countDocuments();
         const questionsCount = await QuestionsModel.countDocuments();
-        const soldCount = await PurchasePlanModel.countDocuments();
+        const soldCount = await PurchaseCourseModel.countDocuments();
         const jobPostsCount = 50; // pore job post get kore replace korte hbe
 
         const summary = [

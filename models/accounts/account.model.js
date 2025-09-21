@@ -14,44 +14,26 @@ const AccountSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    profilePhoto: {
-        type: String
+    isVerified: {
+        type: Boolean,
+        default: false
     },
-    mobile: {
-        type: Number
+    userTypePremium: {
+        type: Boolean,
+        default: false
     },
-    dob: {
-        type: Date
-    },
-    gender: {
-        type: String
-    },
-    address: {
-        type: String
-    },
-    qualification: {
-        type: String
-    },
-    instituteName: {
-        type: String
-    },
-    favoriteSubject: {
-        type: String
-    },
-    plan: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'PurchasePlan',
-        default: null
+    courses: {
+        type: [
+            mongoose.Schema.Types.ObjectId
+        ],
+        ref: 'Courses',
+        default: []
     },
     role: {
         type: String,
         required: true,
-        enum: ["user", "admin"],
-        default: "user"
-    },
-    isVerified: {
-        type: Boolean,
-        default: false
+        enum: ["user", "subAdmin", "superAdmin"],
+        default: "user",
     },
     status: {
         type: String,

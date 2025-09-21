@@ -8,7 +8,7 @@ import { sendEmail } from "../../utils/email/email.js";
 
 //  register 
 export const registerAccount = async (req, res) => {
-    const { plan, username, email, password, role, adminKey } = req.body;
+    const { username, email, password, role, adminKey } = req.body;
 
     // Validate input
     if (!username || !email || !password) {
@@ -34,7 +34,6 @@ export const registerAccount = async (req, res) => {
 
         // Create new user (unverified)
         const newUser = new AccountModel({
-            plan,
             username,
             email,
             password: hashPassword,
@@ -109,8 +108,7 @@ export const emailVerify = async (req, res) => {
         // ✅ Redirect to frontend success page with token
         return res.redirect(`${clientUrl}/account/verify/success?token=${loginToken}`);
     } catch (error) {
-        console.log(error
-        )
+        console.log(error)
         // Token expired or invalid
         return res.redirect(`${clientUrl}/account/verify/failed`);
     }
@@ -184,11 +182,10 @@ export const resendVerificationEmail = async (req, res) => {
 
 
 
-
-
 // login
 export const loginAccount = async (req, res) => {
     const { email, password, role } = req.body;
+
 
     // All Fields Validation
     if (!email || !password || !role) {
@@ -200,7 +197,7 @@ export const loginAccount = async (req, res) => {
     try {
         // Email & Role Match Check
         const isAccount = await AccountModel.findOne({ email, role });
-
+   
         // Check if account exists
         if (!isAccount) {
             return res.status(404).json({
@@ -294,11 +291,9 @@ export const getSingleUser = async (req, res) => {
 
         const accounts = await AccountModel.findById(id)
             .select("-password")
-            .populate("plan")
         return res.status(200).json(accounts)
 
-    } catch (error) {
-        console.log(error)
+    } catch (error) { 
         serverError(res, error)
     }
 };

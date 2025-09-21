@@ -4,7 +4,7 @@ import CourseModel from "../../models/courses/courseModel.js";
 export const createCourse = async (req, res) => {
     try {
 
-        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo } = req.body;
+        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
 
         const nweCourse = await CourseModel({
             name,
@@ -14,7 +14,8 @@ export const createCourse = async (req, res) => {
             links, // ekhane je je categpoires gulote navigae korbe tar link
             regularPrice,
             offerPrice,
-            photo
+            photo,
+            duration
         });
 
         await nweCourse.save();
@@ -108,7 +109,7 @@ export const deleteCourse = async (req, res) => {
         };
 
 
-      return  res.status(200).json({
+        return res.status(200).json({
             message: "সফলভাবে ডিলিট হয়েছে"
         })
 

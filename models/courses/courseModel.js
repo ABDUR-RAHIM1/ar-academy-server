@@ -43,6 +43,10 @@ const CourseSchema = mongoose.Schema({
     photo: {
         type: String,
         required: false
+    },
+    duration: {
+        type: Number,
+        required: true 
     }
 
 }, { timestamps: true });

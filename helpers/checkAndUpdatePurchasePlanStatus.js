@@ -1,11 +1,11 @@
-import PurchasePlanModel from "../models/purchasePlan/purchasePlan.js";
+import PurchaseCourseModel from "../models/purchaseCourse/purchaseCourse.js";
 
 
 
 // ইউজার আইডি দিয়ে প্ল্যান চেক করে স্ট্যাটাস আপডেট করবে
 export const checkAndUpdatePurchasePlanStatus = async (planId) => {
     try {
-        const plan = await PurchasePlanModel.findById(planId);
+        const plan = await PurchaseCourseModel.findById(planId);
 
         if (!plan) return null;
 
