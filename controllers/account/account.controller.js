@@ -185,8 +185,7 @@ export const resendVerificationEmail = async (req, res) => {
 // login
 export const loginAccount = async (req, res) => {
     const { email, password, role } = req.body;
-
-
+ 
     // All Fields Validation
     if (!email || !password || !role) {
         return res.status(400).json({
@@ -197,7 +196,7 @@ export const loginAccount = async (req, res) => {
     try {
         // Email & Role Match Check
         const isAccount = await AccountModel.findOne({ email, role });
-   
+        
         // Check if account exists
         if (!isAccount) {
             return res.status(404).json({
@@ -293,7 +292,7 @@ export const getSingleUser = async (req, res) => {
             .select("-password")
         return res.status(200).json(accounts)
 
-    } catch (error) { 
+    } catch (error) {
         serverError(res, error)
     }
 };

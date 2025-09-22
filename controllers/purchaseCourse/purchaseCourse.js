@@ -4,7 +4,7 @@ import AccountModel from "../../models/accounts/account.model.js";
 import CourseModel from "../../models/courses/courseModel.js";
 import PurchaseCourseModel from "../../models/purchaseCourse/purchaseCourse.js";
 
-
+//  Done
 export const createPurchaseCourse = async (req, res) => {
     try {
         const { courseId } = req.body;
@@ -13,12 +13,27 @@ export const createPurchaseCourse = async (req, res) => {
         if (!courseId) {
             return res.status(400).json({ message: "Invalid course data" });
         }
+        // 1. ইউজার বের করো
+        const user = await AccountModel.findById(id);
+
+        if (!user) {
+            return res.status(404).json({ message: "বাবহারকারী পাওয়া যায়নি!" });
+        }
+
+        // 2. আগে থেকে course আছে কিনা চেক করো
+        const alreadyPurchased = user.courses.some(
+            (c) => c.toString() === courseId
+        );
+
+        if (alreadyPurchased) {
+            return res.status(400).json({ message: "আপনি কোর্সটি আগেই কিনেছেন" });
+        }
 
         // কোর্স খুঁজে বের করো
         const course = await CourseModel.findById(courseId);
 
         if (!course) {
-            return res.status(404).json({ message: "Course not found" });
+            return res.status(404).json({ message: "কোর্স পাওয়া যায়নি!" });
         }
 
         // ধরুন course.duration মাস হিসেবে আছে
@@ -54,7 +69,7 @@ export const createPurchaseCourse = async (req, res) => {
         });
 
         return res.status(201).json({
-            message: "Course purchased successfully",
+            message: "সফলভাবে কোর্স ক্রয় সম্পন্ন হয়েছে",
             subscription,
         });
     } catch (error) {
@@ -121,6 +136,26 @@ export const assignCourseByAdmin = async (req, res) => {
     }
 };
 
+// get user specefic Course by token _id
+export const getMyCourse = async (req, res) => {
+    const { id } = req.user;
+    try {
+
+        const hasCourse = await PurchaseCourseModel.find({ user: id })
+            .populate("course")
+
+        if (!hasCourse) {
+            return res.status(404).json({
+                message: "কোন কোর্স নেই!"
+            })
+        };
+
+        res.status(200).json(hasCourse)
+
+    } catch (error) {
+        serverError(res, error)
+    }
+}
 
 // for admin (dashboard)
 export const getAllPurchaseCourse = async (req, res) => {

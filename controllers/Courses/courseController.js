@@ -6,6 +6,8 @@ export const createCourse = async (req, res) => {
 
         const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
 
+        console.log("from body", req.body)
+
         const nweCourse = await CourseModel({
             name,
             title,
@@ -20,9 +22,10 @@ export const createCourse = async (req, res) => {
 
         await nweCourse.save();
 
-        res.status(200).json({
+        const x= res.status(200).json({
             message: "সফল ভাবে নতুন কোর্স যুক্ত হয়েছে"
         })
+        console.log("from save", x)
 
     } catch (error) {
         serverError(res, error)
