@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken"; 
+import jwt from "jsonwebtoken";
 import { secretKey } from "../config/constans.js";
 
 export const adminVerify = async (req, res, next) => {
@@ -12,8 +12,8 @@ export const adminVerify = async (req, res, next) => {
         const token = authHeader.split(" ")[1];
         const decoded = jwt.verify(token, secretKey);
 
-        // ✅ role check
-        if (decoded.role !== 'admin') {
+        const allowedRoles = ["superAdmin", "moderator"];
+        if (!allowedRoles.includes(decoded.role)) {
             return res.status(403).json({ message: "Access denied! Admins only." });
         }
 

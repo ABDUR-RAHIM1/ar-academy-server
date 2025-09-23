@@ -4,9 +4,8 @@ import CourseModel from "../../models/courses/courseModel.js";
 export const createCourse = async (req, res) => {
     try {
 
-        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
-
-        console.log("from body", req.body)
+        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body; 
+ 
 
         const nweCourse = await CourseModel({
             name,
@@ -22,12 +21,12 @@ export const createCourse = async (req, res) => {
 
         await nweCourse.save();
 
-        const x= res.status(200).json({
+        res.status(200).json({
             message: "সফল ভাবে নতুন কোর্স যুক্ত হয়েছে"
         })
-        console.log("from save", x)
 
     } catch (error) {
+        console.log(error)
         serverError(res, error)
     }
 };

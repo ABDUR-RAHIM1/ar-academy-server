@@ -38,7 +38,7 @@ export const getUserSummary = async (req, res) => {
     try {
 
         const usersCount = await AccountModel.countDocuments();
-        const purchasePlanCount = await PurchasePlanModel.countDocuments();
+        const purchasePlanCount = await PurchaseCourseModel.countDocuments();
         const resultsCount = await ResultsModel.countDocuments();
         const commentsCount = await CommentModel.countDocuments();
 
