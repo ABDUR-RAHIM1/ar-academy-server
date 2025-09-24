@@ -4,8 +4,8 @@ import CourseModel from "../../models/courses/courseModel.js";
 export const createCourse = async (req, res) => {
     try {
 
-        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body; 
- 
+        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
+
 
         const nweCourse = await CourseModel({
             name,
@@ -37,7 +37,8 @@ export const createCourse = async (req, res) => {
 export const getAllCoursesList = async (req, res) => {
     try {
 
-        const courseList = await CourseModel.find();
+        const courseList = await CourseModel.find()
+            .select("-description")
         res.status(200).json(courseList)
 
     } catch (error) {

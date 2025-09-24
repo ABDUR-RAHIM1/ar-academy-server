@@ -1,3 +1,4 @@
+import { roles } from "../../config/constans.js";
 import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
@@ -5,14 +6,21 @@ import QuestionsModel from "../../models/questions/questions.model.js";
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
-    const { isAll, isAllTitle, sub_categorie, chapter, type, duration, startDate, startTime, questions } = req.body;
+    const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, questions } = req.body;
 
     try {
 
         const newQuestions = new QuestionsModel(
-            isAll
-                ? { isAll, isAllTitle, questions, type, duration, startDate, startTime }
-                : { isAll, sub_categorie, chapter, questions, type, duration, startDate, startTime }
+            {
+                course: courseId,
+                questionType,
+                subjectName,
+                duration,
+                startDate,
+                startTime,
+                passMark,
+                questions
+            }
         );
 
         await newQuestions.save();
@@ -51,14 +59,16 @@ export const getAllQuestions = async (req, res) => {
 
         // যদি লগইন থাকে, participant ফিল্টার করে দেয়, যাতে ওই ইউজারের অংশগ্রহণকৃত exam বাদ পড়ে
         // শুধুমাত্র user রোল হলে participant ফিল্টার করবে, অন্য রোল হলে সব ডাটা দেখাবে
-        if (req.user && req.user.id && req.user.role === "user") {
+        // if (req.user && req.user.id && req.user.role === "user") {
+        //     filter = { participant: { $ne: req.user.id } };
+        // }
+        if (req.user && req.user.id && req.user.role === roles.user) {
             filter = { participant: { $ne: req.user.id } };
         }
 
         const questions = await QuestionsModel.find(filter)
             .sort({ createdAt: -1 })
-            .populate("sub_categorie", "sub_name identifier type")
-            .populate("chapter", "chapter_name identifier type");
+
 
         const formattedQuestions = questions.map((q) => {
             return {

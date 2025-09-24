@@ -49,35 +49,22 @@ const QuestionsSchema = new mongoose.Schema({
         type: Array,
         required: false
     },
-    sub_categorie: {
+    course: {
         type: mongoose.Schema.ObjectId,
-        ref: "SubCategorie",
-        required: function () {
-            return !this.isAll; // যদি all না হয়, তাহলে chapter লাগবে
-        }
+        ref: "Courses",
+        required: true,
     },
-    chapter: {
-        type: mongoose.Schema.ObjectId,
-        ref: "Chapter",
-        required: function () {
-            return !this.isAll; // যদি all না হয়, তাহলে chapter লাগবে
-        }
-    },
-    isAll: {
-        type: Boolean,
-        default: false
-    },
-    isAllTitle: {
+    subjectName: {
         type: String,
-        required: function () {
-            return this.isAll; // যদি all  হয়, তাহলে isAllTitle লাগবে
-        }
+        required: true,
+        trim: true
     },
-    type: {
+    questionType: {
         type: String,
-        enum: ["paid", "free"],
-        default: "free"
+        required: true,
+        trim: true
     },
+
     duration: {
         type: Number,
         required: true
@@ -87,6 +74,10 @@ const QuestionsSchema = new mongoose.Schema({
         required: true
     },
     startTime: {
+        type: String,
+        required: true
+    },
+    passMark: {
         type: String,
         required: true
     },

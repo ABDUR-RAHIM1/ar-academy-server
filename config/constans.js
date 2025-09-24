@@ -1,5 +1,12 @@
 import dotenv from "dotenv"
-dotenv.config()
+dotenv.config();
+
+
+export const roles = {
+    admin: "superAdmin",
+    subAdmin: "subAdmin",
+    user: "user"
+}
 
 export const secretKey = process.env.JWT_SECRET
 export const adminSecretKey = process.env.ADMIN_SECRET_KEY
