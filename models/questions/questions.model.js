@@ -81,6 +81,21 @@ const QuestionsSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    nagetiveMark: {
+        type: Number,
+        required: true,
+        default: 0.50
+    },
+    allowRetake: {
+        type: Boolean,
+        required: false,
+        default: true
+    },
+    isPublished: {
+        type: Boolean,
+        required: true,
+        default: false
+    },
     questions: {
         type: [QuestionsItemSchema],
         required: true

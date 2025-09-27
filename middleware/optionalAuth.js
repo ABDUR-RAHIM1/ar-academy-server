@@ -10,6 +10,7 @@ export const optionalAuth = (req, res, next) => {
 
         try {
             const decoded = jwt.verify(token, secretKey);
+     
             req.user = decoded; // user info set করে দিচ্ছি
         } catch (err) {
             req.user = null; // invalid token হলে user থাকবে না
