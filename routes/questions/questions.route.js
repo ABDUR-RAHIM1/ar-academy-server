@@ -9,7 +9,7 @@ const router = express.Router();
 router.post("/create", postQuestions);   // Admin question add
 router.get("/all", optionalAuth, getAllQuestions);  // Admin + User fetch all
 
-router.get("/one/:courseId", optionalAuth, getQuestionById);  // Get question by ID
+router.get("/one/:questionId", optionalAuth, getQuestionById);  // Get question by ID
 router.get("/oneByAdmmin/:questionId", adminVerify, getSingleQuestionByAdmin);  // Get question by ID only Admin 
 router.get("/relatedByCourseName/:subjectName", getQuestionByCourseName);  // Get question by ID
 
