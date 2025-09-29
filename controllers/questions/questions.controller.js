@@ -1,6 +1,7 @@
 import { roles } from "../../config/constans.js";
 import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
-import AccountModel from "../../models/accounts/account.model.js";
+import { serverError } from "../../helpers/serverError.js";
+import { accessQuestion } from "../../middleware/accessQuestion.js";
 import CourseModel from "../../models/courses/courseModel.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 
@@ -105,30 +106,26 @@ export const getAllQuestions = async (req, res) => {
 // ✅ GET - Get Question by courseId (single questions for exam)
 export const getQuestionById = async (req, res) => {
     const { courseId } = req.params;
-
+   
     try {
-        // ✅ ইউজার লগইন করা আছে কিনা check
-        if (!req.user) {
-            return res.status(401).json({
-                message: "এই প্রশ্নে পরিক্ষা দিতে হলে তোমাকে লগইন করতে হবে।"
-            });
+        // ✅ accessQuestion দিয়ে সব চেক হবে
+        const access = await accessQuestion(req.user);
+
+        if (access.status !== 200) {
+            return res.status(access.status).json({ message: access.message });
         }
 
-        // ✅ ইউজার ডাটাবেজ থেকে আনা
-        const user = await AccountModel.findById(req.user.id);
+        const user = access.user; // এখানে safe user পাওয়া যাচ্ছে (admin হলে req.user, user হলে DB user)
 
-        if (!user) {
-            return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
-        }
-
-        // ✅ কোর্সটা খুঁজে বের করা
+        // ✅ কোর্স খুঁজে বের করা
         const course = await CourseModel.findById(courseId);
+
         if (!course) {
             return res.status(404).json({ message: "কোর্স পাওয়া যায়নি" });
         }
 
-        // ✅ Paid হলে enrolled কিনা check
-        if (course.price > 0) {
+        // ✅ Paid হলে শুধু User এর জন্য enrolled কিনা check হবে
+        if (course.price > 0 && user.role !== roles.admin) {
             if (!user.courses.includes(courseId)) {
                 return res.status(403).json({
                     message: "তুমি এই কোর্সে এনরোল করোনি, তাই প্রশ্নে প্রবেশ করতে পারবে না।"
@@ -136,7 +133,7 @@ export const getQuestionById = async (req, res) => {
             }
         }
 
-        // ✅ কোর্সে সম্পর্কিত প্রশ্ন আনো
+        // ✅ প্রশ্ন আনো
         const question = await QuestionsModel.findOne({ course: courseId });
 
         if (!question) {
@@ -155,7 +152,28 @@ export const getQuestionById = async (req, res) => {
 };
 
 
- 
+//  get single questions only for Admin
+export const getSingleQuestionByAdmin = async (req, res) => {
+    const { questionId } = req.params;
+    console.log("call hocce", questionId)
+    try {
+
+        // ✅ প্রশ্ন আনো
+        const question = await QuestionsModel.findById(questionId);
+
+        if (!question) {
+            return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
+        };
+
+        res.status(200).json(question);
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error)
+    }
+}
+
+
 // ✅ GET - Get Questions by subjectName filter (partial match)
 export const getQuestionByCourseName = async (req, res) => {
     const { subjectName } = req.params; // এটা string হবে
@@ -195,10 +213,13 @@ export const getQuestionByCourseName = async (req, res) => {
 
 
 
-// ✅ PUT - Update a question by ID
+// ✅ PUT - Update a question by ID - 
+// je questions update kora hobe sei questions theke ager participet gulo ke remove kora hobe, jeno user notun questions er feelings pay 
 export const updateQuestionById = async (req, res) => {
     const { questionId } = req.params;
-    const { isAll, isAllTitle, sub_categorie, chapter, questions, type, duration } = req.body;
+    // const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
+
+
 
     if (!questionId) {
         return res.status(400).json({ message: "Invalid Question ID" });
@@ -206,14 +227,15 @@ export const updateQuestionById = async (req, res) => {
 
     try {
         // participant ফিল্ড খালি করে দেওয়া হবে
-        const updateData = isAll
-            ? { isAll, isAllTitle, type, participant: [], duration }
-            : { isAll, sub_categorie, chapter, type, participant: [], duration };
+        const updateData = {
+            ...req.body,
+            participant: [],
+        };
 
 
         // যদি questions আসে এবং non-empty হয়, তাহলে updateData তে add করো
-        if (Array.isArray(questions) && questions.length > 0) {
-            updateData.questions = questions;
+        if (Array.isArray(req.body.questions) && req.body.questions.length > 0) {
+            updateData.questions = req.body.questions;
         }
 
         const updatedQuestion = await QuestionsModel.findByIdAndUpdate(
