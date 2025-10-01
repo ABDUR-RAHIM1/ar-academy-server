@@ -5,6 +5,7 @@ import { accessQuestion } from "../../middleware/accessQuestion.js";
 import CourseModel from "../../models/courses/courseModel.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 import AccountModel from "../../models/accounts/account.model.js";
+import mongoose from "mongoose";
 
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
@@ -102,45 +103,56 @@ export const getAllQuestions = async (req, res) => {
 };
 
 
-
-// ✅ stop ace- GET - Get Question by courseId (single questions for exam)
+// GET - Get Question by questionId (single question for exam)
 // export const getQuestionById = async (req, res) => {
-//     const { courseId } = req.params;
+//     const { questionId } = req.params;
 
 //     try {
-//         // ✅ accessQuestion দিয়ে সব চেক হবে
-//         const access = await accessQuestion(req.user);
-
-//         if (access.status !== 200) {
-//             return res.status(access.status).json({ message: access.message });
+//         // ✅ user logged in check
+//         if (!req.user) {
+//             return res.status(401).json({
+//                 message: "এই প্রশ্নে পরীক্ষা দিতে হলে তোমাকে লগইন করতে হবে।"
+//             });
 //         }
 
-//         const user = access.user; // এখানে safe user পাওয়া যাচ্ছে (admin হলে req.user, user হলে DB user)
+//         // ✅ প্রথমে role check করবো
+//         const { role, id } = req.user;
 
-//         // ✅ কোর্স খুঁজে বের করা
-//         const course = await CourseModel.findById(courseId);
-
-//         if (!course) {
-//             return res.status(404).json({ message: "কোর্স পাওয়া যায়নি" });
-//         }
-
-//         // ✅ Paid হলে শুধু User এর জন্য enrolled কিনা check হবে
-//         if (course.price > 0 && user.role !== roles.admin) {
-//             if (!user.courses.includes(courseId)) {
-//                 return res.status(403).json({
-//                     message: "তুমি এই কোর্সে এনরোল করোনি, তাই প্রশ্নে প্রবেশ করতে পারবে না।"
-//                 });
-//             }
-//         }
-
-//         // ✅ প্রশ্ন আনো
-//         const question = await QuestionsModel.findOne({ course: courseId });
-
+//         // ✅ প্রশ্ন fetch
+//         const question = await QuestionsModel.findById(questionId);
 //         if (!question) {
 //             return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
 //         }
 
-//         res.status(200).json(question);
+//         // ✅ যদি admin হয় → সরাসরি access
+//         if (role === roles.admin) {
+//             return res.status(200).json(question);
+//         }
+
+//         // ✅ যদি user হয় → DB থেকে user খুঁজবো
+//         if (role === roles.user) {
+//             const user = await AccountModel.findById(id);
+//             if (!user) {
+//                 return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
+//             }
+
+//             // ✅ user এর course এর সাথে question.course match check
+//             const userHasCourse = user.courses.some(
+//                 (c) => c.toString() === question.course.toString()
+//             );
+
+//             if (!userHasCourse) {
+//                 return res.status(403).json({
+//                     message: "তুমি এই কোর্সে এনরোল করোনি, তাই প্রশ্নে প্রবেশ করতে পারবে না।"
+//                 });
+//             }
+
+//             // সব ঠিক থাকলে return
+//             return res.status(200).json(question);
+//         }
+
+//         // ✅ অন্য role হলে block করে দিবো
+//         return res.status(403).json({ message: "Access denied" });
 
 //     } catch (error) {
 //         console.error(error);
@@ -152,65 +164,49 @@ export const getAllQuestions = async (req, res) => {
 // };
 
 
-// GET - Get Question by questionId (single question for exam)
+// ------------------------ getQuestionById Start -----------------------------------
+// GET - Get Questions By questions Id (singel Question for Exam - only user)
+/*
+ -> login user er id diye user check korbe . 
+  -> jodi courses thake tahole sei course er moddhe thaka courseId gulo diye questionsId diye (jehetu protita course er Id ace questions gulor moddhe ). 
+ -> user pawa gele sei user er course field =[] check kore dekhbe courses filed a kono course kina ace kina.
+-> tarpor mile gele questions gulo return korbe 
+*/
 export const getQuestionById = async (req, res) => {
-    const { questionId } = req.params;
-
     try {
-        // ✅ user logged in check
-        if (!req.user) {
-            return res.status(401).json({
-                message: "এই প্রশ্নে পরীক্ষা দিতে হলে তোমাকে লগইন করতে হবে।"
-            });
+
+        const { questionId } = req.params;
+        const { id } = req.user;
+
+        const user = await AccountModel.findById(id);
+        if (!user) {
+            return res.status(404).json({
+                message: "অনুমতি নেই!"
+            })
         }
 
-        // ✅ প্রথমে role check করবো
-        const { role, id } = req.user;
+        const question = await QuestionsModel.findOne({
+            _id: questionId,
+            course: { $in: user.courses.map(id => new mongoose.Types.ObjectId(id)) }
+        });
 
-        // ✅ প্রশ্ন fetch
-        const question = await QuestionsModel.findById(questionId);
+    
+
         if (!question) {
-            return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
+            return res.status(403).json({
+                message: "এই প্রশ্নে আপনার অনুমতি নেই"
+            })
         }
 
-        // ✅ যদি admin হয় → সরাসরি access
-        if (role === roles.admin) {
-            return res.status(200).json(question);
-        }
+        res.status(200).json(question);
 
-        // ✅ যদি user হয় → DB থেকে user খুঁজবো
-        if (role === roles.user) {
-            const user = await AccountModel.findById(id);
-            if (!user) {
-                return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
-            }
-
-            // ✅ user এর course এর সাথে question.course match check
-            const userHasCourse = user.courses.some(
-                (c) => c.toString() === question.course.toString()
-            );
-
-            if (!userHasCourse) {
-                return res.status(403).json({
-                    message: "তুমি এই কোর্সে এনরোল করোনি, তাই প্রশ্নে প্রবেশ করতে পারবে না।"
-                });
-            }
-
-            // সব ঠিক থাকলে return
-            return res.status(200).json(question);
-        }
-
-        // ✅ অন্য role হলে block করে দিবো
-        return res.status(403).json({ message: "Access denied" });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: "Failed to fetch question",
-            error
-        });
+        console.log(error)
+        serverError(res, error)
     }
 };
+// ------------------------ getQuestionById End -----------------------------------
 
 
 

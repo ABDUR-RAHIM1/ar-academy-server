@@ -2,6 +2,7 @@ import express from "express";
 import { deleteQuestionById, getAllQuestions, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
 import { optionalAuth } from "../../middleware/optionalAuth.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
+import { userVerify } from "../../middleware/userVerify.js";
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ const router = express.Router();
 router.post("/create", postQuestions);   // Admin question add
 router.get("/all", optionalAuth, getAllQuestions);  // Admin + User fetch all
 
-router.get("/one/:questionId", optionalAuth, getQuestionById);  // Get question by ID
+router.get("/one/:questionId", userVerify, getQuestionById);  // Get question by ID
 router.get("/oneByAdmmin/:questionId", adminVerify, getSingleQuestionByAdmin);  // Get question by ID only Admin 
 router.get("/relatedByCourseName/:subjectName", getQuestionByCourseName);  // Get question by ID
 
