@@ -190,7 +190,7 @@ export const getQuestionById = async (req, res) => {
             course: { $in: user.courses.map(id => new mongoose.Types.ObjectId(id)) }
         });
 
-    
+
 
         if (!question) {
             return res.status(403).json({
@@ -213,8 +213,14 @@ export const getQuestionById = async (req, res) => {
 //  get single questions only for Admin
 export const getSingleQuestionByAdmin = async (req, res) => {
     const { questionId } = req.params;
-    console.log("call hocce", questionId)
+
     try {
+
+        if (questionId) {
+            res.status(403).json({
+                message: "QuestionId not found"
+            })
+        }
 
         // ✅ প্রশ্ন আনো
         const question = await QuestionsModel.findById(questionId);

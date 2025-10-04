@@ -6,13 +6,13 @@ import ResultsModel from "../../models/results/results.model.js";
 // POST - Submit Question Paper
 export const submitQuestions = async (req, res) => {
 
-    const { examInfo, results, correctAns, wrongAns, skip, totalQuestions } = req.body;
+    const { question: questionId, results, correctAns, wrongAns, skip, totalmark, nagetiveMark, isPass, isRetake, totalQuestions } = req.body;
     const { id } = req.user
     try {
 
 
         // ✅ Check if user already participated
-        const exam = await QuestionsModel.findById(examInfo.questionId);
+        const exam = await QuestionsModel.findById(questionId);
 
         if (!exam) {
             return res.status(404).json({ message: "পরিক্ষা খুজে পাওয়া যায়নি" });
@@ -26,11 +26,15 @@ export const submitQuestions = async (req, res) => {
 
         const newResult = new ResultsModel({
             user: id,
-            examInfo,
+            question: questionId,
             results,
             correctAns,
             wrongAns,
             skip,
+            totalmark,
+            nagetiveMark,
+            isPass,
+            isRetake, 
             totalQuestions,
         });
 
@@ -38,12 +42,12 @@ export const submitQuestions = async (req, res) => {
 
         // update participant list
         await QuestionsModel.findByIdAndUpdate(
-            examInfo.questionId,
+            questionId,
             { $push: { participant: id } },
             { new: true }
         );
 
-        res.status(201).json({ message: "সফল ভাবে জমা দিয়েছো" });
+        res.status(201).json({ message: "সফল ভাবে জমা দেওয়া হয়েছে" });
 
     } catch (error) {
         res.status(500).json({
@@ -59,7 +63,8 @@ export const getResults = async (req, res) => {
 
         const results = await ResultsModel.find()
             .sort({ createdAt: -1 })
-            .populate("user", "username email");
+            .populate("user", "username email")
+            .populate("question", "subjectName questionType");
 
         res.status(200).json(results);
 
@@ -95,7 +100,9 @@ export const getResultById = async (req, res) => {
     const { resultId } = req.params;
 
     try {
-        const result = await ResultsModel.findById(resultId).populate("user", "username email");
+        const result = await ResultsModel.findById(resultId)
+        .populate("user", "username email")
+        .populate("question", "subjectName questionType  duration passMark")
 
         if (!result) {
             return res.status(404).json({ message: "Result not found" });
