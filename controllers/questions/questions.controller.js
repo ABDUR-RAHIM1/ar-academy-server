@@ -213,17 +213,18 @@ export const getQuestionById = async (req, res) => {
 //  get single questions only for Admin
 export const getSingleQuestionByAdmin = async (req, res) => {
     const { questionId } = req.params;
-
+ 
     try {
 
-        if (questionId) {
-            res.status(403).json({
+        if (!questionId) {
+          return  res.status(403).json({
                 message: "QuestionId not found"
             })
         }
 
         // ✅ প্রশ্ন আনো
         const question = await QuestionsModel.findById(questionId);
+       
 
         if (!question) {
             return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
