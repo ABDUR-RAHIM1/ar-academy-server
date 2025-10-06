@@ -185,7 +185,7 @@ export const resendVerificationEmail = async (req, res) => {
 // login
 export const loginAccount = async (req, res) => {
     const { email, password, role } = req.body;
- 
+
     // All Fields Validation
     if (!email || !password || !role) {
         return res.status(400).json({

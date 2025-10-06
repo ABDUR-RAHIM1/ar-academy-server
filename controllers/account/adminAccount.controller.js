@@ -6,22 +6,23 @@ import { serverError } from "../../helpers/serverError.js";
 import { sendEmail } from "../../utils/email/email.js";
 import AdminAccountModel from "../../models/accounts/adminAccountModel.js";
 
-//  register Admin
+// register Admin / SubAdmin / Moderator
 export const registerAdminAccount = async (req, res) => {
     const { username, email, password, role, adminKey } = req.body;
 
     // Validate input
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !role) {
         return res.status(400).json({ message: "All Fields required" });
     }
 
     try {
-        // Admin secret key check
-        
+        // Only check adminKey if role is 'admin' or 'moderator'
+        if (role === 'admin' || role === 'moderator') {
             if (!adminKey || adminKey !== adminSecretKey) {
                 return res.status(400).json({ message: "Invalid Admin Secret Key" });
             }
-        
+        }
+
         // Check if email exists
         const isExist = await AdminAccountModel.findOne({ email });
         if (isExist) {
@@ -31,18 +32,18 @@ export const registerAdminAccount = async (req, res) => {
         // Hash password
         const hashPassword = await bcrypt.hash(password, 10);
 
-        // Create new user (unverified)
+        // Create new user (unverified for everyone)
         const newUser = new AdminAccountModel({
             username,
             email,
             password: hashPassword,
             role,
-            isVerified: false,
+            isVerified: false, // All roles need verification
         });
 
         const account = await newUser.save();
 
-        // Generate email verification token (valid 15 minutes)
+        // Generate email verification token for everyone
         const emailToken = jwt.sign(
             { adminId: account._id },
             jwtEmailSecret,
@@ -55,11 +56,11 @@ export const registerAdminAccount = async (req, res) => {
             to: email,
             subject: `Welcome ${username}! Please Verify Your Email`,
             html: `
-            <h2>Hi ${username},</h2>
-            <p>Thanks for registering! Please verify your email by clicking the link below:</p>
-            <a href="${verificationLink}">Click Me to Verify Email</a>
-            <p>This link will expire in 15 minutes.</p>
-          `,
+                <h2>Hi ${username},</h2>
+                <p>Thanks for registering! Please verify your email by clicking the link below:</p>
+                <a href="${verificationLink}">Click Me to Verify Email</a>
+                <p>This link will expire in 15 minutes.</p>
+            `,
         };
 
         try {
@@ -75,6 +76,7 @@ export const registerAdminAccount = async (req, res) => {
         serverError(res, error);
     }
 };
+
 
 
 // Admin email verify  
@@ -183,7 +185,7 @@ export const adminResendVerificationEmail = async (req, res) => {
 // login
 export const adminLoginAccount = async (req, res) => {
     const { email, password, role } = req.body;
-
+     
     // All Fields Validation
     if (!email || !password || !role) {
         return res.status(400).json({
