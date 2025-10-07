@@ -100,6 +100,11 @@ const QuestionsSchema = new mongoose.Schema({
         type: [QuestionsItemSchema],
         required: true
     },
+    createdBy: {
+        type: mongoose.Schema.ObjectId,
+        required: true,
+        ref: "AdminAuthAccount"
+    }
 
 }, { timestamps: true });
 

@@ -7,7 +7,7 @@ import { userVerify } from "../../middleware/userVerify.js";
 const router = express.Router();
 
 // Root =>  /api/questions
-router.post("/create", postQuestions);   // Admin question add
+router.post("/create", adminVerify, postQuestions);   // Admin question add
 router.get("/all", optionalAuth, getAllQuestions);  // Admin + User fetch all
 
 router.get("/one/:questionId", userVerify, getQuestionById);  // Get question by ID

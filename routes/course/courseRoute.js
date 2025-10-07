@@ -1,7 +1,9 @@
 
 import express from "express";
-import { createCourse, deleteCourse, getAllCoursesList, getSignlecourse, updateCourse } from "../../controllers/Courses/courseController.js";
+import { createCourse, deleteCourse, getAllCoursesList, getMyCourseStudent, getSinglecourse, updateCourse } from "../../controllers/Courses/courseController.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
+import { userVerify } from "../../middleware/userVerify.js";
+import { optionalAuth } from "../../middleware/optionalAuth.js";
 
 const router = express.Router();
 
@@ -9,7 +11,8 @@ const router = express.Router();
 
 router.post("/create", adminVerify, createCourse);
 router.get("/all", getAllCoursesList);
-router.get("/single/:courseId", getSignlecourse);
+router.get("/single/:courseId", getSinglecourse);
+router.get("/myCourseBySingleUser", optionalAuth, getMyCourseStudent);
 router.put("/update/:courseId", adminVerify, updateCourse);
 router.delete("/delete/:courseId", adminVerify, deleteCourse);
 

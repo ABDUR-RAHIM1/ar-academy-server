@@ -1,7 +1,7 @@
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
-import { adminSecretKey, backendUrl, clientUrl, jwtEmailSecret, secretKey } from "../../config/constans.js";
+import { adminSecretKey, backendUrl, clientUrl, jwtEmailSecret, roles, secretKey } from "../../config/constans.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import { serverError } from "../../helpers/serverError.js";
 import { sendEmail } from "../../utils/email/email.js";
@@ -17,7 +17,7 @@ export const registerAccount = async (req, res) => {
 
     try {
         // Admin secret key check
-        if (role === "admin") {
+        if (role === roles.admin || role === roles.moderator) {
             if (!adminKey || adminKey !== adminSecretKey) {
                 return res.status(400).json({ message: "Invalid Admin Secret Key" });
             }
@@ -196,7 +196,7 @@ export const loginAccount = async (req, res) => {
     try {
         // Email & Role Match Check
         const isAccount = await AccountModel.findOne({ email, role });
-        
+
         // Check if account exists
         if (!isAccount) {
             return res.status(404).json({

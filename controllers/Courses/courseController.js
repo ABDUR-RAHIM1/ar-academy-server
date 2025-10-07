@@ -1,10 +1,13 @@
+import { roles } from "../../config/constans.js";
 import { serverError } from "../../helpers/serverError.js"
+import AccountModel from "../../models/accounts/account.model.js";
+import AdminAccountModel from "../../models/accounts/adminAccountModel.js";
 import CourseModel from "../../models/courses/courseModel.js";
 
 export const createCourse = async (req, res) => {
     try {
 
-        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
+        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration, courseType } = req.body;
 
 
         const nweCourse = await CourseModel({
@@ -16,7 +19,8 @@ export const createCourse = async (req, res) => {
             regularPrice,
             offerPrice,
             photo,
-            duration
+            duration,
+            courseType
         });
 
         await nweCourse.save();
@@ -30,7 +34,6 @@ export const createCourse = async (req, res) => {
         serverError(res, error)
     }
 };
-
 
 
 //  get All CourseList without access his child
@@ -48,7 +51,7 @@ export const getAllCoursesList = async (req, res) => {
 
 
 //  get single Course For Details 
-export const getSignlecourse = async (req, res) => {
+export const getSinglecourse = async (req, res) => {
     try {
 
         const { courseId } = req.params;
@@ -68,7 +71,50 @@ export const getSignlecourse = async (req, res) => {
     }
 };
 
-//  get My Courses (ata pore add korte hobe)
+// get My Courses
+export const getMyCourseStudent = async (req, res) => {
+    try {
+        const token = req.user;
+ 
+        let studentOrSubAdmin;
+
+        if (token.role === roles.subAdmin) {
+            // : Find the Sub Admin
+            studentOrSubAdmin = await AdminAccountModel.findById(token.id);
+        } else {
+            // : Find the user
+             studentOrSubAdmin = await AccountModel.findById(token.id);
+        }
+
+
+        if (!studentOrSubAdmin) {
+            return res.status(404).json({
+                message: `${token.role || "user"} খুঁজে পাওয়া যায়নি  `
+            });
+        }
+
+        // Step 2: Check if user has any courses
+        if (!studentOrSubAdmin.courses || studentOrSubAdmin.courses.length === 0) {
+            return res.status(404).json({
+                message: "No courses found for this user.",
+                courses: []
+            });
+        }
+
+        // Step 3: Find all courses whose _id is in user's course array
+        const hasCourse = await CourseModel.find({
+            _id: { $in: studentOrSubAdmin.courses }
+        })
+
+        // Step 4: Return the courses
+        return res.status(200).json(hasCourse);
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error);
+    }
+};
+
 
 
 //  update Course

@@ -30,6 +30,13 @@ const AdminAccountSchema = new mongoose.Schema({
         enum: ["active", "pending", "reject"],
         default: "active"
     },
+    courses: {
+        type: [
+            mongoose.Schema.Types.ObjectId
+        ],
+        ref: 'Courses',
+        default: []
+    },
 
 }, { timestamps: true });
 

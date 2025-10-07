@@ -46,7 +46,12 @@ const CourseSchema = mongoose.Schema({
     },
     duration: {
         type: Number,
-        required: true 
+        required: true
+    },
+    courseType: {
+        type: String,
+        enum: ["student", "subAdmin"],
+        default: "student"
     }
 
 }, { timestamps: true });

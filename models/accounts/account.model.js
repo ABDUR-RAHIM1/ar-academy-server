@@ -32,14 +32,19 @@ const AccountSchema = new mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ["user", "subAdmin", "superAdmin"],
-        default: "user",
+        enum: ["student", "subStudent"],
+        default: "student",
     },
     status: {
         type: String,
         enum: ["active", "pending", "reject"],
         default: "active"
     },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "AdminAuthAccount",
+        default: null
+    }
 
 }, { timestamps: true });
 

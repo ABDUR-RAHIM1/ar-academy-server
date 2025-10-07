@@ -5,7 +5,7 @@ dotenv.config();
 export const roles = {
     admin: "superAdmin",
     subAdmin: "subAdmin",
-    user: "user"
+    user: "student"
 }
 
 export const secretKey = process.env.JWT_SECRET

@@ -1,11 +1,10 @@
 import mongoose from 'mongoose';
 
 const PurchaseCourseSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'AuthAccount', required: true },
+    subAdminOrStudent: { type: mongoose.Schema.Types.ObjectId, ref: 'AuthAccount', required: true },
+    role: { type: String, required: true }, 
     course: { type: mongoose.Schema.Types.ObjectId, ref: 'Courses', required: true },
     purchaseDate: { type: Date, default: Date.now },
-    endDate: { type: Date, required: true },
-    status: { type: String, enum: ['active', 'expired', 'cancelled'], default: 'active' },
     paymentDetails: {
         transactionId: String,
         paymentMethod: String,

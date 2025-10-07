@@ -1,7 +1,6 @@
 import { roles } from "../../config/constans.js";
 import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
 import { serverError } from "../../helpers/serverError.js";
-import { accessQuestion } from "../../middleware/accessQuestion.js";
 import CourseModel from "../../models/courses/courseModel.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 import AccountModel from "../../models/accounts/account.model.js";
@@ -10,6 +9,9 @@ import mongoose from "mongoose";
 // ✅ POST - Create New Questions
 export const postQuestions = async (req, res) => {
     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
+
+    //  admin , moderator, subAdmin - je karo _id hote pare 
+    const { id: adminId } = req.admin;
 
     try {
 
@@ -25,7 +27,8 @@ export const postQuestions = async (req, res) => {
                 nagetiveMark,
                 allowRetake,
                 isPublished,
-                questions
+                questions,
+                createdBy: adminId
             }
         );
 
@@ -83,6 +86,7 @@ export const getAllQuestions = async (req, res) => {
         const questions = await QuestionsModel.find(filter)
             .sort({ createdAt: -1 })
             .populate("course", "name")
+            .populate("createdBy", "usernam role")
 
         const formattedQuestions = questions.map((q) => {
             return {
@@ -213,18 +217,18 @@ export const getQuestionById = async (req, res) => {
 //  get single questions only for Admin
 export const getSingleQuestionByAdmin = async (req, res) => {
     const { questionId } = req.params;
- 
+
     try {
 
         if (!questionId) {
-          return  res.status(403).json({
+            return res.status(403).json({
                 message: "QuestionId not found"
             })
         }
 
         // ✅ প্রশ্ন আনো
         const question = await QuestionsModel.findById(questionId);
-       
+
 
         if (!question) {
             return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
