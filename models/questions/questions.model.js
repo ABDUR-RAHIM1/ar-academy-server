@@ -104,6 +104,11 @@ const QuestionsSchema = new mongoose.Schema({
         type: mongoose.Schema.ObjectId,
         required: true,
         ref: "AdminAuthAccount"
+    },
+    creatorRole: {
+        type: String,
+        enum: ["superAdmin", "modaretor", "SubAdmin"],
+        default: "superAdmin"
     }
 
 }, { timestamps: true });

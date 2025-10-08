@@ -7,11 +7,67 @@ import AccountModel from "../../models/accounts/account.model.js";
 import mongoose from "mongoose";
 
 // ✅ POST - Create New Questions
+
+// export const postQuestions = async (req, res) => {
+//     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
+
+//     //  admin , moderator, subAdmin - je karo _id hote pare 
+//     const { id: adminId } = req.admin;
+
+//     try {
+
+//         const newQuestions = new QuestionsModel(
+//             {
+//                 course: courseId,
+//                 questionType,
+//                 subjectName,
+//                 duration,
+//                 startDate,
+//                 startTime,
+//                 passMark,
+//                 nagetiveMark,
+//                 allowRetake,
+//                 isPublished,
+//                 questions,
+//                 createdBy: adminId
+//             }
+//         );
+
+//         await newQuestions.save();
+
+//         res.status(201).json({
+//             message: "Questions added successfully"
+//         });
+
+//     } catch (error) {
+//         console.error(error);
+//         if (error.name === "ValidationError") {
+//             // field-wise errors একটায় সাজানো
+//             const errors = {};
+//             Object.keys(error.errors).forEach(field => {
+//                 errors[field] = error.errors[field].message;
+//             });
+
+//             return res.status(400).json({
+//                 message: "Validation Failed",
+//                 errors: errors
+//             });
+//         }
+//         res.status(500).json({
+//             message: "Failed to post questions",
+//             error
+//         });
+//     }
+// };
+
+
+// new duel Access (admin , subAdmin)
 export const postQuestions = async (req, res) => {
     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
 
-    //  admin , moderator, subAdmin - je karo _id hote pare 
-    const { id: adminId } = req.admin;
+
+    const creator = req.admin || req.subAdmin;
+
 
     try {
 
@@ -28,7 +84,8 @@ export const postQuestions = async (req, res) => {
                 allowRetake,
                 isPublished,
                 questions,
-                createdBy: adminId
+                createdBy: creator.id,
+                creatorRole: creator.role 
             }
         );
 
