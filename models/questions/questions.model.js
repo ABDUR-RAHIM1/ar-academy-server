@@ -107,7 +107,7 @@ const QuestionsSchema = new mongoose.Schema({
     },
     creatorRole: {
         type: String,
-        enum: ["superAdmin", "modaretor", "SubAdmin"],
+        enum: ["superAdmin", "modaretor", "subAdmin"],
         default: "superAdmin"
     }
 

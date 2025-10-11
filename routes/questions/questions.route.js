@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteQuestionById, getAllQuestions, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
+import { deleteQuestionById, getAllQuestions, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, getSubAdminQuestions, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
 import { optionalAuth } from "../../middleware/optionalAuth.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { userVerify } from "../../middleware/userVerify.js";
@@ -9,16 +9,31 @@ const router = express.Router();
 
 // Root =>  /api/questions
 router.post("/create", adminVerify, postQuestions);   // Admin question add 
-router.post("/create/subAdmin", subAdminVerify, postQuestions);   // subAdmin question add 
 
-router.get("/all", optionalAuth, getAllQuestions);  // Admin + User fetch all
+// subAdmin question add 
+router.post("/create/subAdmin", subAdminVerify, postQuestions);
 
-router.get("/one/:questionId", userVerify, getQuestionById);  // Get question by ID
-router.get("/oneByAdmmin/:questionId", adminVerify, getSingleQuestionByAdmin);  // Get question by ID only Admin 
-router.get("/relatedByCourseName/:subjectName", getQuestionByCourseName);  // Get question by ID
+// Admin + User fetch all
+router.get("/all", optionalAuth, getAllQuestions);
 
-router.put("/update/:questionId", updateQuestionById);      // ✅ Update
-router.delete("/delete/:questionId", deleteQuestionById);  // Delete question by ID
+//  only subAdmin get his questions
+router.get("/getAllBySubAdmin", subAdminVerify, getSubAdminQuestions); 
+
+// Get question by ID
+router.get("/one/:questionId", userVerify, getQuestionById);
+
+// Get question by ID only Admin 
+router.get("/oneByAdmmin/:questionId", adminVerify, getSingleQuestionByAdmin);
+
+// Get question by ID
+router.get("/relatedByCourseName/:subjectName", getQuestionByCourseName);
+
+
+// ✅ Update
+router.put("/update/:questionId", updateQuestionById);
+
+// Delete question by ID 
+router.delete("/delete/:questionId", deleteQuestionById);
 
 
 export default router;
