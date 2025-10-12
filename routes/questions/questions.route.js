@@ -14,10 +14,13 @@ router.post("/create", adminVerify, postQuestions);   // Admin question add
 router.post("/create/subAdmin", subAdminVerify, postQuestions);
 
 // Admin + User fetch all
-router.get("/all", optionalAuth, getAllQuestions);
+// router.get("/all", optionalAuth, getAllQuestions);
+
+//  only for admin 
+router.get("/all", adminVerify, getAllQuestions);
 
 //  only subAdmin get his questions
-router.get("/getAllBySubAdmin", subAdminVerify, getSubAdminQuestions); 
+router.get("/getAllBySubAdmin", subAdminVerify, getSubAdminQuestions);
 
 // Get question by ID
 router.get("/one/:questionId", userVerify, getQuestionById);
@@ -29,11 +32,19 @@ router.get("/oneByAdmmin/:questionId", adminVerify, getSingleQuestionByAdmin);
 router.get("/relatedByCourseName/:subjectName", getQuestionByCourseName);
 
 
-// ✅ Update
-router.put("/update/:questionId", updateQuestionById);
+// ✅ Update   by admin 
+router.put("/updateAdmin/:questionId", adminVerify, updateQuestionById);
 
-// Delete question by ID 
-router.delete("/delete/:questionId", deleteQuestionById);
+// ✅ Update   by SubAdmin  
+router.put("/updateSubAdmin/:questionId", subAdminVerify, updateQuestionById);
+
+
+// Delete question by ID  only admin / modaretor
+router.delete("/delete/:questionId", adminVerify, deleteQuestionById);
+
+
+// Delete question by ID  only sub Admin 
+router.delete("/deleteSubAdmin/:questionId", subAdminVerify, deleteQuestionById);
 
 
 export default router;

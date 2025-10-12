@@ -1,14 +1,11 @@
 import { roles } from "../../config/constans.js";
-import { checkAndUpdatePurchasePlanStatus } from "../../helpers/checkAndUpdatePurchasePlanStatus.js";
 import { serverError } from "../../helpers/serverError.js";
-import CourseModel from "../../models/courses/courseModel.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import mongoose from "mongoose";
 
 // ✅ POST - Create New Questions
-
-// new duel Access (admin , subAdmin)
+// duel Access (admin , subAdmin)
 export const postQuestions = async (req, res) => {
     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
 
@@ -64,51 +61,42 @@ export const postQuestions = async (req, res) => {
 };
 
 
+// + <----------------  get all questions for admin / moderator Start -------------> 
 
-// ✅ GET - Fetch All Questions with optionalAuth (middleware)
+//  ata suhdu matro admin / moderator er jonno
+// jekhae subAdmin er questions gulo bade baki sob access pabe admin o moderator. 
+// ✅ শুধুমাত্র admin এর জন্য: subAdmin দ্বারা তৈরি প্রশ্ন বাদে সব প্রশ্ন দেখাবে
 export const getAllQuestions = async (req, res) => {
     try {
-        // Default filter: শুধু published questions
-        let filter = {};
+        const token = req.admin;
 
-        // যদি guest → শুধুমাত্র published
-        if (!req.user) {
-            filter = { isPublished: true };
-        }
-        // যদি logged-in normal user
-        else if (req.user.role === roles.user) {
-            filter = {
-                isPublished: true,
-                participant: { $nin: [req.user.id] }
-            };
-        }
-        // যদি admin / staff → সব দেখবে, filter empty
-        else if (req.user.role === roles.admin) {
-            filter = {}; // no filter → all questions
+        // 🧩 শুধু admin এর জন্য permission চেক
+        if (!token || token.role !== roles.admin) {
+            return res.status(403).json({
+                message: "আপনার এই রুটে প্রবেশের অনুমতি নেই।",
+            });
         }
 
-        const questions = await QuestionsModel.find(filter)
+        // 🔹 subAdmin দ্বারা তৈরি প্রশ্ন বাদ দিয়ে সব প্রশ্ন আনবে
+        const questions = await QuestionsModel.find({
+            creatorRole: { $ne: "subAdmin" },
+        })
             .sort({ createdAt: -1 })
             .populate("course", "name")
-            .populate("createdBy", "usernam role")
+            .populate("createdBy", "username role")
 
-        const formattedQuestions = questions.map((q) => {
-            return {
-                ...q.toObject(),
-                questionsCount: q.questions?.length || 0,
-                questions: undefined, // প্রশ্নগুলো না পাঠানোর জন্য
-            };
-        });
-
-        res.status(200).json(formattedQuestions);
+        res.status(200).json(questions);
     } catch (error) {
-        console.error(error);
+        console.error("Error fetching questions:", error);
         res.status(500).json({
             message: "Failed to fetch questions",
-            error,
+            error: error.message,
         });
     }
 };
+// + <----------------  get all questions for admin / moderator End -------------> 
+
+
 
 // + <-----------------------  Sub Admin Only get his Questions Start --------------->
 export const getSubAdminQuestions = async (req, res) => {
@@ -135,76 +123,14 @@ export const getSubAdminQuestions = async (req, res) => {
     } catch (error) {
         serverError(res, error)
     }
-}
-
-
+};
 // - <-----------------------  Sub Admin Only get his Questions  End --------------->
 
 
 
 
-// GET - Get Question by questionId (single question for exam)
-// export const getQuestionById = async (req, res) => {
-//     const { questionId } = req.params;
 
-//     try {
-//         // ✅ user logged in check
-//         if (!req.user) {
-//             return res.status(401).json({
-//                 message: "এই প্রশ্নে পরীক্ষা দিতে হলে তোমাকে লগইন করতে হবে।"
-//             });
-//         }
-
-//         // ✅ প্রথমে role check করবো
-//         const { role, id } = req.user;
-
-//         // ✅ প্রশ্ন fetch
-//         const question = await QuestionsModel.findById(questionId);
-//         if (!question) {
-//             return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
-//         }
-
-//         // ✅ যদি admin হয় → সরাসরি access
-//         if (role === roles.admin) {
-//             return res.status(200).json(question);
-//         }
-
-//         // ✅ যদি user হয় → DB থেকে user খুঁজবো
-//         if (role === roles.user) {
-//             const user = await AccountModel.findById(id);
-//             if (!user) {
-//                 return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
-//             }
-
-//             // ✅ user এর course এর সাথে question.course match check
-//             const userHasCourse = user.courses.some(
-//                 (c) => c.toString() === question.course.toString()
-//             );
-
-//             if (!userHasCourse) {
-//                 return res.status(403).json({
-//                     message: "তুমি এই কোর্সে এনরোল করোনি, তাই প্রশ্নে প্রবেশ করতে পারবে না।"
-//                 });
-//             }
-
-//             // সব ঠিক থাকলে return
-//             return res.status(200).json(question);
-//         }
-
-//         // ✅ অন্য role হলে block করে দিবো
-//         return res.status(403).json({ message: "Access denied" });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({
-//             message: "Failed to fetch question",
-//             error
-//         });
-//     }
-// };
-
-
-// ------------------------ getQuestionById Start -----------------------------------
+// ------------------------ getQuestionById Start (for Exam) -----------------------------------
 // GET - Get Questions By questions Id (singel Question for Exam - only user)
 /*
  -> login user er id diye user check korbe . 
@@ -321,11 +247,11 @@ export const getQuestionByCourseName = async (req, res) => {
 
 
 // ✅ PUT - Update a question by ID - 
-// je questions update kora hobe sei questions theke ager participet gulo ke remove kora hobe, jeno user notun questions er feelings pay 
+// je questions update kora hobe sei questions theke ager participet gulo ke remove kora hobe, jeno user notun questions er feelings pay.
+// ai controoller admin o subAdmin er jonno alada router a  use hobe, tai ekhane conditionaly token get kore update kora  holo.
 export const updateQuestionById = async (req, res) => {
     const { questionId } = req.params;
-    // const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
-
+    const token = req.admin || req.subAdmin;
 
 
     if (!questionId) {
@@ -333,6 +259,22 @@ export const updateQuestionById = async (req, res) => {
     }
 
     try {
+
+        //  ke create koreche seta check kora holo
+        const question = await QuestionsModel.findOne({
+            _id: questionId,
+            createdBy: token.id,
+            creatorRole: token.role
+        });
+
+        if (!question) {
+            return res.status(404).json({
+                message: "আপনার অনুমতি নেই"
+            })
+        }
+
+
+
         // participant ফিল্ড খালি করে দেওয়া হবে
         const updateData = {
             ...req.body,
@@ -373,26 +315,50 @@ export const updateQuestionById = async (req, res) => {
 
 // ✅ DELETE - Delete Question by ID
 export const deleteQuestionById = async (req, res) => {
-    const { questionId } = req.params;
+
     try {
+        const { questionId } = req.params;
+        const token = req.admin || req.subAdmin;
 
-        const isDeleted = await QuestionsModel.findByIdAndDelete(questionId);
-
-        if (!isDeleted) {
-            return res.status(404).json({
-                message: "Question not found"
-            });
+        if (!questionId) {
+            return res.status(400).json({ message: "Invalid Question ID" });
         }
 
-        res.status(200).json({
-            message: "Question deleted successfully"
-        });
+ 
+            //  ke delete korte parbe  seta check kora holo
+            const question = await QuestionsModel.findOne({
+                _id: questionId,
+                createdBy: token.id,
+                creatorRole: token.role
+            });
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            message: "Failed to delete question",
-            error
-        });
-    }
-};
+            if (!question) {
+                return res.status(404).json({
+                    message: "আপনার অনুমতি নেই"
+                })
+            }
+
+
+
+
+
+            const isDeleted = await QuestionsModel.findByIdAndDelete(questionId);
+
+            if (!isDeleted) {
+                return res.status(404).json({
+                    message: "Question not found"
+                });
+            }
+
+            res.status(200).json({
+                message: "Question deleted successfully"
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                message: "Failed to delete question",
+                error
+            });
+        }
+    };
