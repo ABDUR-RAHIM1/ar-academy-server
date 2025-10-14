@@ -85,7 +85,17 @@ export const getAllQuestions = async (req, res) => {
             .populate("course", "name")
             .populate("createdBy", "username role")
 
-        res.status(200).json(questions);
+
+        const formattedQuestions = questions.map((q) => {
+            return {
+                ...q.toObject(),
+                questionsCount: q.questions?.length || 0,
+                questions: undefined,
+            };
+        });
+
+        res.status(200).json(formattedQuestions);
+
     } catch (error) {
         console.error("Error fetching questions:", error);
         res.status(500).json({
@@ -94,7 +104,59 @@ export const getAllQuestions = async (req, res) => {
         });
     }
 };
-// + <----------------  get all questions for admin / moderator End -------------> 
+// - <----------------  get all questions for admin / moderator End -------------> 
+
+
+// + < --- user er course purchsae koreche sei course er questins get korbe Start  -->
+//              user je course purchse korbe suhdu sei questions guilo dekhabe 
+
+export const getStudentCourseQuestions = async (req, res) => {
+    try {
+        const { id } = req.user;          // লগইন করা শিক্ষার্থীর আইডি
+        const { courseId } = req.params;  // URL থেকে কোর্স আইডি
+
+        // 1️⃣ শিক্ষার্থী খুঁজে বের করা
+        const student = await AccountModel.findById(id);
+
+        if (!student) {
+            return res.status(404).json({
+                message: "কোন শিক্ষার্থী পাওয়া যায়নি"
+            });
+        }
+
+        // 2️⃣ শিক্ষার্থীর course তালিকা থেকে যাচাই করা
+        const studentCourses = student.courses || [];
+
+        // যদি কোর্সে ভর্তি না থাকে
+        if (!studentCourses.includes(courseId)) {
+            return res.status(403).json({
+                message: "আপনি এই কোর্সে ভর্তি নন"
+            });
+        }
+
+        // 3️⃣ প্রশ্নগুলো বের করা (শুধু এই course এর)
+        const questions = await QuestionsModel.find({ course: courseId })
+            .sort({ createdAt: -1 })
+            .populate("course", "name")
+            .populate("createdBy", "username role");
+
+        // 4️⃣ প্রয়োজনে structure সুন্দর করে ফরম্যাট করা
+        const formattedQuestions = questions.map((q) => ({
+            ...q.toObject(),
+            questionsCount: q.questions?.length || 0,
+            questions: undefined,
+        }));
+
+        // 5️⃣ রেসপন্স পাঠানো
+        res.status(200).json(formattedQuestions);
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error);
+    }
+};
+
+// - < --- ser er course purchsae koreche sei course er questins get korbe End ---->
 
 
 
@@ -114,7 +176,7 @@ export const getSubAdminQuestions = async (req, res) => {
             return {
                 ...q.toObject(),
                 questionsCount: q.questions?.length || 0,
-                questions: undefined, // প্রশ্নগুলো না পাঠানোর জন্য
+                questions: undefined,
             };
         });
 
@@ -130,7 +192,7 @@ export const getSubAdminQuestions = async (req, res) => {
 
 
 
-// ------------------------ getQuestionById Start (for Exam) -----------------------------------
+// ---------------- getQuestionById Start (for Exam)  -----------------------------------
 // GET - Get Questions By questions Id (singel Question for Exam - only user)
 /*
  -> login user er id diye user check korbe . 
@@ -173,8 +235,6 @@ export const getQuestionById = async (req, res) => {
     }
 };
 // ------------------------ getQuestionById End -----------------------------------
-
-
 
 
 
@@ -324,41 +384,41 @@ export const deleteQuestionById = async (req, res) => {
             return res.status(400).json({ message: "Invalid Question ID" });
         }
 
- 
-            //  ke delete korte parbe  seta check kora holo
-            const question = await QuestionsModel.findOne({
-                _id: questionId,
-                createdBy: token.id,
-                creatorRole: token.role
-            });
 
-            if (!question) {
-                return res.status(404).json({
-                    message: "আপনার অনুমতি নেই"
-                })
-            }
+        //  ke delete korte parbe  seta check kora holo
+        const question = await QuestionsModel.findOne({
+            _id: questionId,
+            createdBy: token.id,
+            creatorRole: token.role
+        });
 
-
+        if (!question) {
+            return res.status(404).json({
+                message: "আপনার অনুমতি নেই"
+            })
+        }
 
 
 
-            const isDeleted = await QuestionsModel.findByIdAndDelete(questionId);
 
-            if (!isDeleted) {
-                return res.status(404).json({
-                    message: "Question not found"
-                });
-            }
 
-            res.status(200).json({
-                message: "Question deleted successfully"
-            });
+        const isDeleted = await QuestionsModel.findByIdAndDelete(questionId);
 
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({
-                message: "Failed to delete question",
-                error
+        if (!isDeleted) {
+            return res.status(404).json({
+                message: "Question not found"
             });
         }
-    };
+
+        res.status(200).json({
+            message: "Question deleted successfully"
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            message: "Failed to delete question",
+            error
+        });
+    }
+};

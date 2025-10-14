@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteQuestionById, getAllQuestions, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, getSubAdminQuestions, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
+import { deleteQuestionById, getAllQuestions, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, getStudentCourseQuestions, getSubAdminQuestions, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
 import { optionalAuth } from "../../middleware/optionalAuth.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { userVerify } from "../../middleware/userVerify.js";
@@ -18,6 +18,9 @@ router.post("/create/subAdmin", subAdminVerify, postQuestions);
 
 //  only for admin 
 router.get("/all", adminVerify, getAllQuestions);
+
+//  student paid courses questions based on course
+router.get("/getByStudentCourse/:courseId", userVerify, getStudentCourseQuestions)
 
 //  only subAdmin get his questions
 router.get("/getAllBySubAdmin", subAdminVerify, getSubAdminQuestions);
