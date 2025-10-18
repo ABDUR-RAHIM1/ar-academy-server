@@ -13,7 +13,6 @@ import questionsRouter from "./routes/questions/questions.route.js";
 import resultsRouter from "./routes/results/results.route.js";
 import commentRouter from "./routes/comments/comments.route.js";
 import utilsRouter from "./routes/utils/utils.route.js";
-import planRouter from "./routes/plan/plan.route.js";
 import questionSheetRouter from "./routes/questionSheet/questionSheetRoute.js";
 import courseRouter from "./routes/course/courseRoute.js";
 import purchaseRouter from "./routes/purchaseCourse/purchaseCourse.js";
@@ -48,7 +47,6 @@ app.use("/api/chapters", chapterRouter)
 app.use("/api/questions", questionsRouter)
 app.use("/api/results", resultsRouter)
 app.use("/api/comment", commentRouter)
-app.use("/api/plan", planRouter)
 app.use("/api/course", courseRouter)
 app.use("/api/purchase", purchaseRouter)
 

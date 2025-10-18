@@ -1,7 +1,7 @@
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
-import { backendUrl, clientUrl, jwtEmailSecret, secretKey } from "../../config/constans.js";
+import { backendUrl, clientUrl, jwtEmailSecret, roles, secretKey } from "../../config/constans.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import { serverError } from "../../helpers/serverError.js";
 import { sendEmail } from "../../utils/email/email.js";
@@ -335,10 +335,10 @@ export const loginAccount = async (req, res) => {
 export const getAllUserForAdmin = async (req, res) => {
     try {
 
-        const accounts = await AccountModel.find({ role: "user" })
+        const accounts = await AccountModel.find({role: roles.user})
             .select("-password")
             .sort({ createdAt: -1 });
-
+   
         return res.status(200).json(accounts)
 
     } catch (error) {
@@ -445,7 +445,7 @@ export const updateUserAccountStatus = async (req, res) => {
         };
 
         return res.status(200).json({
-            message: "Status Updated", 
+            message: "Status Updated",
         })
 
 
@@ -618,7 +618,7 @@ export const updateOnlySubAdminStudentAccountStatus = async (req, res) => {
         };
 
         return res.status(200).json({
-            message: "Status Updated", 
+            message: "Status Updated",
         })
 
 
