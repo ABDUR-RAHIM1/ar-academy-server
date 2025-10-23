@@ -1,3 +1,4 @@
+import AccountModel from "../../models/accounts/account.model.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 import ResultsModel from "../../models/results/results.model.js";
 
@@ -57,12 +58,13 @@ export const submitQuestions = async (req, res) => {
     }
 };
 
-// GET - Fetch all results ( in dahsboard)
+// GET - Fetch all results ( in admin dahsboard)
 export const getResults = async (req, res) => {
     try {
 
         const results = await ResultsModel.find()
             .sort({ createdAt: -1 })
+            .select("-results")
             .populate("user", "username email")
             .populate("question", "subjectName questionType");
 
@@ -77,12 +79,42 @@ export const getResults = async (req, res) => {
 };
 
 
+// GET - Fetch all results (in admin dashboard)
+export const getResultsBySubAdmin = async (req, res) => {
+    try {
+        const { id } = req.subAdmin;
+
+        // Step 1: Find students under this subAdmin
+        const students = await AccountModel.find({ owner: id }).select("_id");
+
+        // Step 2: Extract only student IDs
+        const studentIds = students.map((student) => student._id);
+
+        // Step 3: Fetch results for those students only
+        const results = await ResultsModel.find({ user: { $in: studentIds } })
+            .sort({ createdAt: -1 })
+            .select("-results")
+            .populate("user", "username email")
+            .populate("question", "subjectName questionType");
+
+        res.status(200).json(results);
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to fetch result sheets",
+            error,
+        });
+    }
+};
+
+
+
 //  fetch  result for specpic user ( user profile )
 export const getMyResults = async (req, res) => {
     const { id } = req.user;
     try {
         const myResults = await ResultsModel.find({ user: id })
             .sort({ createdAt: -1 })
+            .select("-results")
             .populate("question", "subjectName questionType");
         res.status(200).json(myResults);
 
