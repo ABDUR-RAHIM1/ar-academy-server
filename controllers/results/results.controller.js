@@ -34,7 +34,7 @@ export const submitQuestions = async (req, res) => {
             totalmark,
             nagetiveMark,
             isPass,
-            isRetake, 
+            isRetake,
             totalQuestions,
         });
 
@@ -83,7 +83,7 @@ export const getMyResults = async (req, res) => {
     try {
         const myResults = await ResultsModel.find({ user: id })
             .sort({ createdAt: -1 })
-
+            .populate("question", "subjectName questionType");
         res.status(200).json(myResults);
 
     } catch (error) {
@@ -101,8 +101,8 @@ export const getResultById = async (req, res) => {
 
     try {
         const result = await ResultsModel.findById(resultId)
-        .populate("user", "username email")
-        .populate("question", "subjectName questionType  duration passMark")
+            .populate("user", "username email")
+            .populate("question", "subjectName questionType  duration passMark")
 
         if (!result) {
             return res.status(404).json({ message: "Result not found" });
