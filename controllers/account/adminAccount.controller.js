@@ -62,7 +62,7 @@ export const registerAdminAccount = async (req, res) => {
                 <p>This link will expire in 15 minutes.</p>
             `,
         };
-
+        console.log(verificationLink, options)
         try {
             await sendEmail(options)
         } catch (err) {
@@ -185,7 +185,7 @@ export const adminResendVerificationEmail = async (req, res) => {
 // login
 export const adminLoginAccount = async (req, res) => {
     const { email, password, role } = req.body;
-     
+
     // All Fields Validation
     if (!email || !password || !role) {
         return res.status(400).json({
