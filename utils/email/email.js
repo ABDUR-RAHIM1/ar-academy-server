@@ -4,8 +4,7 @@ import nodemailer from 'nodemailer';
 import { emailPass, emailUser } from '../../config/constans.js';
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    port: 465,
+    service: 'gmail', 
     host: 'smtp.gmail.com',
     auth: {
         user: emailUser,

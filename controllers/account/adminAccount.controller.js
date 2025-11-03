@@ -38,38 +38,41 @@ export const registerAdminAccount = async (req, res) => {
             email,
             password: hashPassword,
             role,
-            isVerified: false, // All roles need verification
+            isVerified: true, // All roles need verification
         });
 
         const account = await newUser.save();
 
         // Generate email verification token for everyone
-        const emailToken = jwt.sign(
-            { adminId: account._id },
-            jwtEmailSecret,
-            { expiresIn: '15m' }
-        );
+        // const emailToken = jwt.sign(
+        //     { adminId: account._id },
+        //     jwtEmailSecret,
+        //     { expiresIn: '15m' }
+        // );
 
-        const verificationLink = `${backendUrl}/api/account/admin/verify-email?token=${emailToken}`;
+        // const verificationLink = `${backendUrl}/api/account/admin/verify-email?token=${emailToken}`;
 
-        const options = {
-            to: email,
-            subject: `Welcome ${username}! Please Verify Your Email`,
-            html: `
-                <h2>Hi ${username},</h2>
-                <p>Thanks for registering! Please verify your email by clicking the link below:</p>
-                <a href="${verificationLink}">Click Me to Verify Email</a>
-                <p>This link will expire in 15 minutes.</p>
-            `,
-        };
-        console.log(verificationLink, options)
+        // const options = {
+        //     to: email,
+        //     subject: `Welcome ${username}! Please Verify Your Email`,
+        //     html: `
+        //         <h2>Hi ${username},</h2>
+        //         <p>Thanks for registering! Please verify your email by clicking the link below:</p>
+        //         <a href="${verificationLink}">Click Me to Verify Email</a>
+        //         <p>This link will expire in 15 minutes.</p>
+        //     `,
+        // };
+        // console.log(verificationLink, options)
         try {
-            await sendEmail(options)
+            // await sendEmail(options)
+
+            // res.status(201).json({ message: "Register successful! Please check your email to verify your account." });
+            res.status(201).json({ message: "Register successful!" });
         } catch (err) {
             console.error("Email sending failed:", err.message);
         }
 
-        res.json({ message: "Register successful! Please check your email to verify your account." });
+
 
     } catch (error) {
         console.error(error);

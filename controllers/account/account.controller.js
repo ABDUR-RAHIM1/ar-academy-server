@@ -130,24 +130,26 @@ export const registerAccount = async (req, res) => {
             password: hashPassword,
             role,
             owner,
-            isVerified: false,
+            isVerified: true,
         });
 
         const account = await newUser.save();
 
         // Email verification
-        const emailToken = jwt.sign({ userId: account._id }, jwtEmailSecret, { expiresIn: "15m" });
-        const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
+        // const emailToken = jwt.sign({ userId: account._id }, jwtEmailSecret, { expiresIn: "15m" });
+        // const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
 
-        await sendEmail({
-            to: email,
-            subject: `Welcome ${username}! Verify your email`,
-            html: `<h2>Hi ${username},</h2>
-                   <p>Click to verify: <a href="${verificationLink}">Verify Email</a></p>
-                   <p>This link will expire in 15 minutes.</p>`,
-        });
+        // await sendEmail({
+        //     to: email,
+        //     subject: `Welcome ${username}! Verify your email`,
+        //     html: `<h2>Hi ${username},</h2>
+        //            <p>Click to verify: <a href="${verificationLink}">Verify Email</a></p>
+        //            <p>This link will expire in 15 minutes.</p>`,
+        // });
 
-        return res.json({ message: "Register successful! Please check your email to verify your account." });
+        // return res.json({ message: "Register successful! Please check your email to verify your account." });
+
+        return res.status(201).json({ message: "Register successful" });
 
     } catch (error) {
         console.error(error);
@@ -335,10 +337,10 @@ export const loginAccount = async (req, res) => {
 export const getAllUserForAdmin = async (req, res) => {
     try {
 
-        const accounts = await AccountModel.find({role: roles.user})
+        const accounts = await AccountModel.find({ role: roles.user })
             .select("-password")
             .sort({ createdAt: -1 });
-   
+
         return res.status(200).json(accounts)
 
     } catch (error) {
