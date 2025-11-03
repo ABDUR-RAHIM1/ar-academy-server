@@ -79,7 +79,7 @@ export const getResults = async (req, res) => {
 };
 
 
-// GET - Fetch all results (in admin dashboard)
+// GET - Fetch all results (in  subAdmin dashboard)
 export const getResultsBySubAdmin = async (req, res) => {
     try {
         const { id } = req.subAdmin;
