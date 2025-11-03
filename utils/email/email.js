@@ -5,6 +5,8 @@ import { emailPass, emailUser } from '../../config/constans.js';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
+    port: 465,
+    host: 'smtp.gmail.com',
     auth: {
         user: emailUser,
         pass: emailPass,
@@ -18,7 +20,7 @@ const transporter = nodemailer.createTransport({
  * @param {String} html - Email Body (HTML format)
  */
 
-export const sendEmail = async ({to, subject, html}) => {
+export const sendEmail = async ({ to, subject, html }) => {
     const mailOptions = {
         from: `"Onushilon Academy" <${emailUser}>`,
         to,
