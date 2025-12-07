@@ -17,6 +17,7 @@ import questionSheetRouter from "./routes/questionSheet/questionSheetRoute.js";
 import courseRouter from "./routes/course/courseRoute.js";
 import purchaseRouter from "./routes/purchaseCourse/purchaseCourse.js";
 import adminAccoutRouter from "./routes/account/adminAccount.route.js";
+import leaderBoardRouter from "./routes/leaderBoard/leaderBoard.route.js";
 
 export const app = express()
 app.set('trust proxy', 1);
@@ -55,6 +56,7 @@ app.use("/api/sheet", questionSheetRouter)
 
 
 app.use("/api/utils", utilsRouter)
+app.use("/api/leaderboard", leaderBoardRouter)
 
 app.get('/', (req, res) => {
     res.send('Welcome to the AR AcademyBD API!');
