@@ -5,8 +5,9 @@ import { app } from "./app.js";
 
 // export const app = express();
 
+const myPort = port || 9000
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`)
+app.listen(myPort, () => {
+    console.log(`Server running on port ${myPort}`)
     connectDb()
 });
