@@ -59,7 +59,17 @@ app.use("/api/utils", utilsRouter)
 app.use("/api/leaderboard", leaderBoardRouter)
 
 app.get('/', (req, res) => {
-    res.send('Welcome to the AR AcademyBD API!');
+    res.send('Welcome to the Onushilon Academy Server!');
+});
+
+// Correct Health Check Route
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "UP",
+    message: "Onushilon Academy Server is running",
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+  });
 });
 
 // Handle undefined routes

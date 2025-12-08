@@ -11,7 +11,7 @@ export const roles = {
 export const secretKey = process.env.JWT_SECRET
 export const adminSecretKey = process.env.ADMIN_SECRET_KEY
 
-export const port = process.env.PORT || 5000;
+export const port = process.env.PORT || 6000;
 export const mongoUrl = process.env.MONGO_URL
 
 export const emailUser = process.env.EMAIL_USER
