@@ -7,7 +7,7 @@ import ResultsModel from "../../models/results/results.model.js";
 // POST - Submit Question Paper
 export const submitQuestions = async (req, res) => {
 
-    const { question: questionId, results, correctAns, wrongAns, skip, totalmark, nagetiveMark, isPass, isRetake, totalQuestions } = req.body;
+    const { question: questionId, results, correctAns, wrongAns, skip, totalmark, nagetiveMark, passMark, isPass, isRetake, totalQuestions } = req.body;
     const { id } = req.user
     try {
 
@@ -34,6 +34,7 @@ export const submitQuestions = async (req, res) => {
             skip,
             totalmark,
             nagetiveMark,
+            passMark,
             isPass,
             isRetake,
             totalQuestions,
