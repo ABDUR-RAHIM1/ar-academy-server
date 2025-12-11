@@ -111,6 +111,7 @@ export const getAllQuestions = async (req, res) => {
 //              user je course purchse korbe suhdu sei questions guilo dekhabe 
 
 export const getStudentCourseQuestions = async (req, res) => {
+
     try {
         const { id } = req.user;          // লগইন করা শিক্ষার্থীর আইডি
         const { courseId } = req.params;  // URL থেকে কোর্স আইডি
@@ -135,7 +136,10 @@ export const getStudentCourseQuestions = async (req, res) => {
         }
 
         // 3️⃣ প্রশ্নগুলো বের করা (শুধু এই course এর)
-        const questions = await QuestionsModel.find({ course: courseId })
+        const questions = await QuestionsModel.find({
+            course: courseId,
+            participant: { $nin: [id] }
+        })
             .sort({ createdAt: -1 })
             .populate("course", "name")
             .populate("createdBy", "username role");
@@ -269,7 +273,7 @@ export const getSingleQuestionByAdmin = async (req, res) => {
 
 // ✅ GET - Get Questions by subjectName filter (partial match)
 export const getQuestionByCourseName = async (req, res) => {
-    const { subjectName } = req.params; // এটা string হবে
+    const { subjectName } = req.params;
 
     try {
         // split করে আলাদা আলাদা শব্দ বানাও (যেমন "test one" => ["test", "one"])
