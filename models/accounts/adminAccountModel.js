@@ -29,13 +29,10 @@ const AdminAccountSchema = new mongoose.Schema({
         type: String,
         enum: ["active", "pending", "reject"],
         default: "active"
-    },
-    courses: {
-        type: [
-            mongoose.Schema.Types.ObjectId
-        ],
-        ref: 'Courses',
-        default: []
+    }, 
+    pakages: {
+        type: String,
+        default:0,  // pakages ti din hisebe count hobe. 
     },
 
 }, { timestamps: true });

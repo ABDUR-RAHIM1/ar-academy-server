@@ -48,10 +48,16 @@ const CourseSchema = mongoose.Schema({
         type: Number,
         required: true
     },
-    courseType: {
+    courseType: { // ke toiri koreche 
         type: String,
-        enum: ["student", "subAdmin"],
-        default: "student"
+        enum: ["superAdmin", "subAdmin"],
+        default: "superAdmin"
+    },
+    //  ke course ti toiri koreche, (superAdmin naki subAdmin)
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "AdminAuthAccount",
+        required: true,
     }
 
 }, { timestamps: true });

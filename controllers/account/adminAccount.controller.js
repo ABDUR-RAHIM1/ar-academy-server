@@ -252,7 +252,7 @@ export const adminLoginAccount = async (req, res) => {
 
 
 
-//  get all for user for admin 
+//  get all user for admin 
 export const getAllUserForAdmin = async (req, res) => {
     try {
 
@@ -318,7 +318,7 @@ export const getSinglAdmin = async (req, res) => {
 }
 
 
-//  Update User  Status (admin authenticatiob guard add korte hbe)
+//  Update User  Status (admin authentication guard add korte hbe)
 export const updateUserAccount = async (req, res) => {
     const { userId } = req.params;
     const { status } = await req.body;

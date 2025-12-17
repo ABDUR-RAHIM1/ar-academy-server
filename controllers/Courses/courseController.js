@@ -7,7 +7,9 @@ import CourseModel from "../../models/courses/courseModel.js";
 export const createCourse = async (req, res) => {
     try {
 
-        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration, courseType } = req.body;
+        const creator = req?.admin || req?.subAdmin
+
+        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
 
 
         const nweCourse = await CourseModel({
@@ -20,7 +22,8 @@ export const createCourse = async (req, res) => {
             offerPrice,
             photo,
             duration,
-            courseType
+            courseType: creator.role, // superAdmin or subAdmin role 
+            createdBy: creator.id, // superAdmin or subAdmin _id 
         });
 
         await nweCourse.save();
@@ -36,11 +39,12 @@ export const createCourse = async (req, res) => {
 };
 
 
-//  get All CourseList without access his child
+// 
+/**===================  get All CourseList without access his child  Below ================= */
 export const getAllCoursesList = async (req, res) => {
     try {
 
-        const courseList = await CourseModel.find()
+        const courseList = await CourseModel.find({ courseType: "superAdmin" })
             .select("-description")
         res.status(200).json(courseList)
 
@@ -48,9 +52,11 @@ export const getAllCoursesList = async (req, res) => {
         serverError(res, error)
     }
 };
+/**===================  get All CourseList without access his child  Above ================= */
 
 
-//  get single Course For Details 
+
+/**=================== Get Singel Course  For Details  Below =========================== */
 export const getSinglecourse = async (req, res) => {
     try {
 
@@ -70,31 +76,28 @@ export const getSinglecourse = async (req, res) => {
         serverError(res, error)
     }
 };
+/**=================== Get Singel Course  For Details  Above =========================== */
 
-// get My Courses
+
+
+
+/**=================== get My purcahse Courses (for Student) Below =================== */
 export const getMyCourseStudent = async (req, res) => {
     try {
-        const token = req.user;
- 
-        let studentOrSubAdmin;
+        const { id } = req.user;
 
-        if (token.role === roles.subAdmin) {
-            // : Find the Sub Admin
-            studentOrSubAdmin = await AdminAccountModel.findById(token.id);
-        } else {
-            // : Find the user
-             studentOrSubAdmin = await AccountModel.findById(token.id);
-        }
+        const student = await AccountModel.findById(id);
 
 
-        if (!studentOrSubAdmin) {
+
+        if (!student) {
             return res.status(404).json({
                 message: `${token.role || "user"} খুঁজে পাওয়া যায়নি  `
             });
         }
 
         // Step 2: Check if user has any courses
-        if (!studentOrSubAdmin.courses || studentOrSubAdmin.courses.length === 0) {
+        if (!student.courses || student.courses.length === 0) {
             return res.status(404).json({
                 message: "No courses found for this user.",
                 courses: []
@@ -103,7 +106,7 @@ export const getMyCourseStudent = async (req, res) => {
 
         // Step 3: Find all courses whose _id is in user's course array
         const hasCourse = await CourseModel.find({
-            _id: { $in: studentOrSubAdmin.courses }
+            _id: { $in: student.courses }
         })
 
         // Step 4: Return the courses
@@ -114,10 +117,53 @@ export const getMyCourseStudent = async (req, res) => {
         serverError(res, error);
     }
 };
+/**=================== get My purcahse Courses (for Student) Above =================== */
 
 
 
-//  update Course
+
+/**=================== 
+ * get My Created Courses (for SubAdmin) Below
+ * logged in sub Admin Courses Only
+ *  =================== */
+export const getMyCourseSubAdmin = async (req, res) => {
+    try {
+        const { id } = req.subAdmin;
+
+        const subAdmin = await AdminAccountModel.findById(id);
+
+        if (!subAdmin) {
+            return res.status(404).json({
+                message: `${token.role || "Sub Admin"} খুঁজে পাওয়া যায়নি  `
+            });
+        }
+
+
+        const courses = await CourseModel.find({
+            courseType: "subAdmin",
+            createdBy: id
+        });
+
+        if (!courses) {
+            return res.status(404).json({
+                message: 'Course Not found!'
+            });
+        };
+
+        res.status(200).json(courses)
+
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error);
+    }
+};
+/**=================== get My purcahse Courses (for Student) Above =================== */
+
+
+
+
+/**=================== Update Course Below ============================================= */
 export const updateCourse = async (req, res) => {
     try {
 
@@ -141,10 +187,13 @@ export const updateCourse = async (req, res) => {
         serverError(res, error)
     }
 }
+/**=================== Update Course Above ============================================= */
 
 
 
-//  delete Course 
+
+
+/**=================== Delete Course Below ============================================= */
 export const deleteCourse = async (req, res) => {
     try {
 
@@ -166,3 +215,4 @@ export const deleteCourse = async (req, res) => {
         serverError(res, error)
     }
 }
+/**=================== Update Course Above ============================================= */ 

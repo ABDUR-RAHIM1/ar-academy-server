@@ -140,7 +140,8 @@ export const getStudentCourseQuestions = async (req, res) => {
             course: courseId,
             participant: { $nin: [id] }
         })
-            .sort({ createdAt: -1 })
+            // .sort({ createdAt: -1 })
+            .sort({ startDate: 1 })
             .populate("course", "name")
             .populate("createdBy", "username role");
 
