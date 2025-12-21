@@ -4,6 +4,7 @@ import { optionalAuth } from "../../middleware/optionalAuth.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { userVerify } from "../../middleware/userVerify.js";
 import { subAdminVerify } from "../../middleware/subAdminVerify.js";
+import { isSubAdminWithPackage } from "../../middleware/isSubAdminWithPackage.js";
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
 router.post("/create", adminVerify, postQuestions);   // Admin question add 
 
 // subAdmin question add 
-router.post("/create/subAdmin", subAdminVerify, postQuestions);
+router.post("/create/subAdmin", subAdminVerify, isSubAdminWithPackage, postQuestions);
 
 // Admin + User fetch all
 // router.get("/all", optionalAuth, getAllQuestions);
@@ -19,11 +20,11 @@ router.post("/create/subAdmin", subAdminVerify, postQuestions);
 //  only for admin 
 router.get("/all", adminVerify, getAllQuestions);
 
-//  student paid courses questions based on course
+//  student paid courses questions based on course 
 router.get("/getByStudentCourse/:courseId", userVerify, getStudentCourseQuestions)
 
 //  only subAdmin get his questions
-router.get("/getAllBySubAdmin", subAdminVerify, getSubAdminQuestions);
+router.get("/getAllBySubAdmin", subAdminVerify, isSubAdminWithPackage, getSubAdminQuestions);
 
 // Get question by ID
 router.get("/one/:questionId", userVerify, getQuestionById);

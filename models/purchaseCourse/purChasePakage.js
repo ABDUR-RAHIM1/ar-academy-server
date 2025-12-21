@@ -3,10 +3,14 @@ import mongoose from "mongoose";
 //  agulor kaj kora hoyni akhono 
 const PurchasePakageSchema = new mongoose.Schema({
     packageId: {
-        type: Number,
+        type: mongoose.Schema.Types.ObjectId,
         required: true
     },
-
+    purchasedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "AdminAuthAccount",
+        required: true
+    },
     name: {
         type: String,
         required: true
@@ -31,7 +35,7 @@ const PurchasePakageSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     }
-}, { _id: false });
+});
 
 const PurchasePakageModel = mongoose.model("PurchasePakage", PurchasePakageSchema);
 export default PurchasePakageModel;

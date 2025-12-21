@@ -4,13 +4,14 @@ import { getMyResults, getResultById, getResults, getResultsBySubAdmin, submitQu
 import { userVerify } from "../../middleware/userVerify.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { subAdminVerify } from "../../middleware/subAdminVerify.js";
+import { isSubAdminWithPackage } from "../../middleware/isSubAdminWithPackage.js";
 
 const router = express.Router();
 
 // /api/results
 router.post("/submit-questions", userVerify, submitQuestions);
 router.get("/all", adminVerify, getResults); // all results
-router.get("/subAdmin", subAdminVerify, getResultsBySubAdmin); // all results
+router.get("/subAdmin", subAdminVerify, isSubAdminWithPackage, getResultsBySubAdmin); // all results
 router.get("/my", userVerify, getMyResults);  // speepic result for user
 router.get("/details/:resultId", getResultById); // GET /api/results/:resultId
 export default router;

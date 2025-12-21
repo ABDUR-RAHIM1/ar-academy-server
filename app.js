@@ -18,6 +18,7 @@ import courseRouter from "./routes/course/courseRoute.js";
 import purchaseRouter from "./routes/purchaseCourse/purchaseCourse.js";
 import adminAccoutRouter from "./routes/account/adminAccount.route.js";
 import leaderBoardRouter from "./routes/leaderBoard/leaderBoard.route.js";
+import purchasePakagesRouter from "./routes/purchaseCourse/purchasePakage.js";
 
 export const app = express()
 app.set('trust proxy', 1);
@@ -29,9 +30,9 @@ dotenv.config()
 
 // Create rate limiter middleware
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // 15 মিনিটে প্রতি IP তে 100 টি request allowed
-    message: "Too many requests, please try again later.",
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 15 মিনিটে প্রতি IP তে 100 টি request allowed
+  message: "Too many requests, please try again later.",
 });
 
 // Apply rate limiter to all requests
@@ -51,6 +52,9 @@ app.use("/api/comment", commentRouter)
 app.use("/api/course", courseRouter)
 app.use("/api/purchase", purchaseRouter)
 
+// sub Admin packeges Start
+app.use("/api/packages", purchasePakagesRouter)
+// sub Admin packeges End
 //  questions Sheets
 app.use("/api/sheet", questionSheetRouter)
 
@@ -59,7 +63,7 @@ app.use("/api/utils", utilsRouter)
 app.use("/api/leaderboard", leaderBoardRouter)
 
 app.get('/', (req, res) => {
-    res.send('Welcome to the Onushilon Academy Server!');
+  res.send('Welcome to the Onushilon Academy Server!');
 });
 
 // Correct Health Check Route
@@ -74,8 +78,8 @@ app.get("/health", (req, res) => {
 
 // Handle undefined routes
 app.use((req, res, next) => {
-    res.status(404).json({
-        error: true,
-        message: "The requested route does not exist on the server.",
-    });
+  res.status(404).json({
+    error: true,
+    message: "The requested route does not exist on the server.",
+  });
 });

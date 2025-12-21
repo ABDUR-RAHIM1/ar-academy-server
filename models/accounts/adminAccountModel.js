@@ -29,10 +29,11 @@ const AdminAccountSchema = new mongoose.Schema({
         type: String,
         enum: ["active", "pending", "reject"],
         default: "active"
-    }, 
-    pakages: {
-        type: String,
-        default:0,  // pakages ti din hisebe count hobe. 
+    },
+    package: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PurchasePakage",
+        default: null
     },
 
 }, { timestamps: true });
