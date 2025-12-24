@@ -72,6 +72,66 @@ export const getAllChapters = async (req, res) => {
 
 
 //  get Chapter contents Using By Sub Categorie Identifier based on free or paid
+// export const getChapterByIdentifier = async (req, res) => {
+//     const { subIdentifier } = req.params;
+
+//     if (!subIdentifier) {
+//         return res.status(404).json({ message: "Chapter Name Missing!" });
+//     }
+
+//     try {
+//         const chapter = await ChaptersModel.findOne({
+//             identifier: { $regex: `^${subIdentifier}$`, $options: "i" },
+//         });
+
+//         if (!chapter) {
+//             return res.status(404).json({ message: "Chapter not found" });
+//         }
+
+//         // ✅ Admin হলে কোন paid-unpaid check লাগবে না
+//         if (req.user?.role === "admin") {
+//             return res.status(200).json(chapter);
+//         }
+
+//         // ✅ যদি ফ্রি হয় বা type না থাকে তাহলে ফ্রি হিসেবেই পাঠাও
+//         if (!chapter.type || chapter.type === "free") {
+//             return res.status(200).json(chapter);
+//         }
+
+//         // ✅ পেইড হলে ইউজার লাগবে 
+//         if (!req.user) {
+//             return res.status(401).json({
+//                 message: "এই অধ্যায় দেখতে হলে আপনাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে।"
+//             });
+//         }
+
+//         // ✅ ইউজার ডাটাবেজ থেকে আনো কারণ req.user এ plan নেই
+//         const user = await AccountModel.findById(req.user.id);
+
+//         if (!user || !user.plan) {
+//             return res.status(403).json({
+//                 message: "তুমি কোন প্ল্যান ক্রয় করোনি, প্রিমিয়াম প্ল্যান না থাকলে এই অধ্যায়ে প্রবেশাধিকার নেই।"
+//             });
+//         }
+
+//         // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
+//         const plan = await checkAndUpdatePurchasePlanStatus(user.plan);
+
+//         if (!plan || plan.status !== "active") {
+//             return res.status(403).json({
+//                 message: "এই অধ্যায়টি দেখতে হলে আপনাকে প্ল্যান ক্রয় করতে হবে।"
+//             });
+//         }
+
+//         // ✅ সব ঠিক থাকলে চ্যাপ্টার পাঠাও
+//         res.status(200).json(chapter);
+
+//     } catch (error) {
+//         console.error("Chapter fetch failed:", error);
+//         res.status(500).json({ message: "Chapter Fetch Failed", error });
+//     }
+// };
+
 export const getChapterByIdentifier = async (req, res) => {
     const { subIdentifier } = req.params;
 
@@ -88,41 +148,6 @@ export const getChapterByIdentifier = async (req, res) => {
             return res.status(404).json({ message: "Chapter not found" });
         }
 
-        // ✅ Admin হলে কোন paid-unpaid check লাগবে না
-        if (req.user?.role === "admin") {
-            return res.status(200).json(chapter);
-        }
-
-        // ✅ যদি ফ্রি হয় বা type না থাকে তাহলে ফ্রি হিসেবেই পাঠাও
-        if (!chapter.type || chapter.type === "free") {
-            return res.status(200).json(chapter);
-        }
-
-        // ✅ পেইড হলে ইউজার লাগবে 
-        if (!req.user) {
-            return res.status(401).json({
-                message: "এই অধ্যায় দেখতে হলে আপনাকে লগইন করতে হবে। এবং প্রিমিয়াম প্লান ক্রয় করতে হবে।"
-            });
-        }
-
-        // ✅ ইউজার ডাটাবেজ থেকে আনো কারণ req.user এ plan নেই
-        const user = await AccountModel.findById(req.user.id);
-
-        if (!user || !user.plan) {
-            return res.status(403).json({
-                message: "তুমি কোন প্ল্যান ক্রয় করোনি, প্রিমিয়াম প্ল্যান না থাকলে এই অধ্যায়ে প্রবেশাধিকার নেই।"
-            });
-        }
-
-        // ✅ ইউজারের প্ল্যান মেয়াদ শেষ হয়েছে কিনা চেক ও আপডেট করো
-        const plan = await checkAndUpdatePurchasePlanStatus(user.plan);
-
-        if (!plan || plan.status !== "active") {
-            return res.status(403).json({
-                message: "এই অধ্যায়টি দেখতে হলে আপনাকে প্ল্যান ক্রয় করতে হবে।"
-            });
-        }
-
         // ✅ সব ঠিক থাকলে চ্যাপ্টার পাঠাও
         res.status(200).json(chapter);
 
@@ -131,7 +156,6 @@ export const getChapterByIdentifier = async (req, res) => {
         res.status(500).json({ message: "Chapter Fetch Failed", error });
     }
 };
-
 
 // ✅ GET Chapters by SubCategory Identifier (without contents , only for sidebar and dashboard table)
 export const getChaptersBySubCategoryIdentifier = async (req, res) => {
