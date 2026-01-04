@@ -9,12 +9,14 @@ export const submitQuestions = async (req, res) => {
 
     const { question: questionId, results, correctAns, wrongAns, skip, totalmark, nagetiveMark, passMark, isPass, isRetake, totalQuestions } = req.body;
     const { id } = req.user
+ 
+
     try {
 
 
         // ✅ Check if user already participated
         const exam = await QuestionsModel.findById(questionId);
-
+    
         if (!exam) {
             return res.status(404).json({ message: "পরিক্ষা খুজে পাওয়া যায়নি" });
         }
@@ -52,6 +54,7 @@ export const submitQuestions = async (req, res) => {
         res.status(201).json({ message: "সফল ভাবে জমা দেওয়া হয়েছে" });
 
     } catch (error) {
+        console.log(error)
         res.status(500).json({
             message: "পরিক্ষা জমা দিতে বার্থ হয়েছে!",
             error,

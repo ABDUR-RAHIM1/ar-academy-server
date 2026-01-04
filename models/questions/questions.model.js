@@ -13,27 +13,30 @@ const QuestionsItemSchema = new mongoose.Schema({
     },
     Option1: {
         type: String,
-        required: [true, "Option1 is required"]
+        // required: [true, "Option1 is required"]
     },
     Option2: {
         type: String,
-        required: [true, "Option2 is required"]
+        // required: [true, "Option2 is required"]
     },
     Option3: {
         type: String,
-        required: [true, "Option3 is required"]
+        // required: [true, "Option3 is required"]
     },
     Option4: {
         type: String,
-        required: [true, "Option4 is required"]
+        // required: [true, "Option4 is required"]
     },
     CorrectAnswer: {
         type: String,
-        required: [true, "CorrectAnswer is required"]
+        // required: [true, "CorrectAnswer is required"]
     },
     Explanation: {
         type: String,
-        required: false
+        // required: false
+    },
+    YtLink: {
+        type: String, 
     },
     Subject: {
         type: String,
@@ -97,9 +100,9 @@ const QuestionsSchema = new mongoose.Schema({
         default: false
     },
     questions: {
-        type: [QuestionsItemSchema],
+        type:  [QuestionsItemSchema],
         required: true
-    },
+    },  
     createdBy: {
         type: mongoose.Schema.ObjectId,
         required: true,

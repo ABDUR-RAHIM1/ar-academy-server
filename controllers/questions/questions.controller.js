@@ -6,6 +6,61 @@ import mongoose from "mongoose";
 
 // ✅ POST - Create New Questions
 // duel Access (admin , subAdmin)
+// export const postQuestions = async (req, res) => {
+//     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
+
+
+//     const creator = req.admin || req.subAdmin;
+
+
+//     try {
+
+//         const newQuestions = new QuestionsModel(
+//             {
+//                 course: courseId,
+//                 questionType,
+//                 subjectName,
+//                 duration,
+//                 startDate,
+//                 startTime,
+//                 passMark,
+//                 nagetiveMark,
+//                 allowRetake,
+//                 isPublished,
+//                 questions,
+//                 createdBy: creator.id,
+//                 creatorRole: creator.role
+//             }
+//         );
+
+//         await newQuestions.save();
+
+//         res.status(201).json({
+//             message: "Questions added successfully"
+//         });
+
+//     } catch (error) {
+//         console.error(error);
+//         if (error.name === "ValidationError") {
+//             // field-wise errors একটায় সাজানো
+//             const errors = {};
+//             Object.keys(error.errors).forEach(field => {
+//                 errors[field] = error.errors[field].message;
+//             });
+
+//             return res.status(400).json({
+//                 message: "Validation Failed",
+//                 errors: errors
+//             });
+//         }
+//         res.status(500).json({
+//             message: "Failed to post questions",
+//             error
+//         });
+//     }
+// };
+
+
 export const postQuestions = async (req, res) => {
     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
 
@@ -15,7 +70,12 @@ export const postQuestions = async (req, res) => {
 
     try {
 
-        const newQuestions = new QuestionsModel(
+        if (!questionType || !questions) {
+            return res.status(400).json({ message: "questionType and questions are required" });
+        };
+
+
+        let newQuestions = new QuestionsModel(
             {
                 course: courseId,
                 questionType,
@@ -32,6 +92,38 @@ export const postQuestions = async (req, res) => {
                 creatorRole: creator.role
             }
         );
+
+        // Conditional validation
+        if (questionType === "mcq") {
+            // check MCQ-specific fields
+            const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
+
+            if (invalid) {
+                return res.status(400).json({ message: "MCQ questions missing fields" });
+            };
+
+            newQuestions.questions = questions;
+
+
+        } else if (questionType === "written") {
+            // check Written-specific fields
+            const invalid = questions.some(q => !q.Question || !q.Subject);
+
+            if (invalid) {
+                return res.status(400).json({ message: "Written questions missing Question field" });
+            };
+
+            const writtenQuestions = questions.map((q) => ({
+                ID: q.ID,
+                Question: q.Question,
+                CorrectAnswer: "",
+                Subject: q.Subject
+            }));
+
+            newQuestions.questions = writtenQuestions;
+
+        };
+
 
         await newQuestions.save();
 
@@ -59,7 +151,6 @@ export const postQuestions = async (req, res) => {
         });
     }
 };
-
 
 // + <----------------  get all questions for admin / moderator Start -------------> 
 
@@ -152,8 +243,19 @@ export const getStudentCourseQuestions = async (req, res) => {
             questions: undefined,
         }));
 
+        // MCQ questions
+        const mcq = formattedQuestions.filter(q => q.questionType === "mcq");
+
+        // Written questions
+        const written = formattedQuestions.filter(q => q.questionType === "written");
+
+        res.status(200).json({
+            mcq,
+            written
+        });
+
         // 5️⃣ রেসপন্স পাঠানো
-        res.status(200).json(formattedQuestions);
+        // res.status(200).json(formattedQuestions);
 
     } catch (error) {
         console.log(error)
@@ -230,6 +332,7 @@ export const getQuestionById = async (req, res) => {
                 message: "এই প্রশ্নে আপনার অনুমতি নেই"
             })
         }
+
 
         res.status(200).json(question);
 
