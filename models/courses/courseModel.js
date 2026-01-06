@@ -48,6 +48,10 @@ const CourseSchema = mongoose.Schema({
         type: Number,
         required: true
     },
+    starDate: {
+        type: String,
+        required: true
+    },
     courseType: { // ke toiri koreche 
         type: String,
         enum: ["superAdmin", "subAdmin"],

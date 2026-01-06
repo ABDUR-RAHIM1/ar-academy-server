@@ -9,7 +9,7 @@ export const createCourse = async (req, res) => {
 
         const creator = req?.admin || req?.subAdmin
 
-        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration } = req.body;
+        const { name, title, shortDesc, description, links, regularPrice, offerPrice, photo, duration, startDate } = req.body;
 
 
         const nweCourse = await CourseModel({
@@ -22,6 +22,7 @@ export const createCourse = async (req, res) => {
             offerPrice,
             photo,
             duration,
+            startDate,
             courseType: creator.role, // superAdmin or subAdmin role 
             createdBy: creator.id, // superAdmin or subAdmin _id 
         });
@@ -29,7 +30,7 @@ export const createCourse = async (req, res) => {
         await nweCourse.save();
 
         res.status(200).json({
-            message: "সফল ভাবে নতুন কোর্স যুক্ত হয়েছে"
+            message: "নতুন কোর্স যুক্ত হয়েছে"
         })
 
     } catch (error) {
