@@ -174,8 +174,9 @@ export const updateCourse = async (req, res) => {
             $set: req.body
         }, { new: true });
 
+
         if (!isUpdated) {
-            return res.status.json(404).json({
+            return res.status.json(404)({
                 message: "কোন কোর্স পাওয়া যায়নি"
             })
         };

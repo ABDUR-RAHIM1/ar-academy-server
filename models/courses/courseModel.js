@@ -48,7 +48,7 @@ const CourseSchema = mongoose.Schema({
         type: Number,
         required: true
     },
-    starDate: {
+    startDate: {
         type: String,
         required: true
     },
