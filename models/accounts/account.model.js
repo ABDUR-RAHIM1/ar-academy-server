@@ -6,16 +6,20 @@ const AccountSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    accountMethod: {
+        type: String,
+        required: true,
+    },
     email: {
         type: String,
         unique: true,
-        sparse: true,   
+        sparse: true,
         trim: true,
     },
     phone: {
         type: String,
         unique: true,
-        sparse: true,    
+        sparse: true,
         trim: true,
     },
     password: {

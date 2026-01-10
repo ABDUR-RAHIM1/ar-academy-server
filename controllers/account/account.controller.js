@@ -82,7 +82,7 @@ export const registerAccount = async (req, res) => {
             const users = req.body;
             // Validation
             for (const user of users) {
-                if (!user.username || (!user.email && !user.phone) || !user.password) {
+                if (!user.username || !user.accountMethod || (!user.email && !user.phone) || !user.password) {
                     return res.status(400).json({ message: "All fields required for all users" });
                 }
             }
@@ -132,6 +132,7 @@ export const registerAccount = async (req, res) => {
             const hashedUsers = await Promise.all(users.map(async u => {
                 const obj = {
                     username: u.username,
+                    accountMethod: u.accountMethod,
                     password: await bcrypt.hash(u.password, 10),
                     isVerified: true
                 };
@@ -147,16 +148,12 @@ export const registerAccount = async (req, res) => {
         }
 
         // ✅ Single user case
-        const { username, email, phone, password, role, owner } = req.body;
+        const { username, accountMethod, email, phone, password, role, owner } = req.body;
 
-        if (!username || (!email && !phone) || !password) {
+        if (!username || !accountMethod || (!email && !phone) || !password) {
             return res.status(400).json({ message: "All fields required" });
         }
 
-        // const exist = await AccountModel.findOne({ email });
-        // if (exist) {
-        //     return res.status(400).json({ message: "Email already exists" });
-        // }
         const exist = await AccountModel.findOne({
             $or: [
                 email ? { email } : null,
@@ -173,6 +170,7 @@ export const registerAccount = async (req, res) => {
 
         const userData = {
             username,
+            accountMethod,
             password: hashPassword,
             role,
             owner,
