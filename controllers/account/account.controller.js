@@ -80,60 +80,110 @@ export const registerAccount = async (req, res) => {
         // যদি একাধিক ইউজার আসে (array)
         if (Array.isArray(req.body)) {
             const users = req.body;
-
             // Validation
             for (const user of users) {
-                if (!user.username || !user.email || !user.password) {
+                if (!user.username || (!user.email && !user.phone) || !user.password) {
                     return res.status(400).json({ message: "All fields required for all users" });
                 }
             }
 
-            // Duplicate email check
-            const emails = users.map(u => u.email);
-            const exists = await AccountModel.find({ email: { $in: emails } });
+            const emails = users
+                .filter(u => u.email)
+                .map(u => u.email);
+
+            const phones = users
+                .filter(u => u.phone)
+                .map(u => u.phone);
+
+            const exists = await AccountModel.find({
+                $or: [
+                    { email: { $in: emails } },
+                    { phone: { $in: phones } }
+                ]
+            });
+
+            // if (exists.length > 0) {
+            //     const existEmails = exists.map(e => e.email);
+            //     return res.status(400).json({ message: `Email(s) already exist: ${existEmails.join(", ")}` });
+            // }
+
             if (exists.length > 0) {
-                const existEmails = exists.map(e => e.email);
-                return res.status(400).json({ message: `Email(s) already exist: ${existEmails.join(", ")}` });
+                const duplicates = exists.map(u => {
+                    if (u.email && u.phone) return `${u.email} / ${u.phone}`;
+                    if (u.email) return u.email;
+                    if (u.phone) return u.phone;
+                    return null;
+                }).filter(Boolean);
+
+                return res.status(400).json({
+                    message: `Email/Phone already exist: ${duplicates.join(", ")}`
+                });
             }
 
             // Hash password & mark verified true
-            const hashed = await Promise.all(
-                users.map(async (u) => ({
-                    ...u,
-                    password: await bcrypt.hash(String(u.password || ""), 10),
+            // const hashed = await Promise.all(
+            //     users.map(async (u) => ({
+            //         ...u,
+            //         password: await bcrypt.hash(String(u.password || ""), 10),
 
-                }))
-            );
+            //     }))
+            // );
 
-            await AccountModel.insertMany(hashed);
+            const hashedUsers = await Promise.all(users.map(async u => {
+                const obj = {
+                    username: u.username,
+                    password: await bcrypt.hash(u.password, 10),
+                    isVerified: true
+                };
+
+                if (u.email) obj.email = u.email;
+                if (u.phone) obj.phone = u.phone;
+
+                return obj;
+            }));
+            await AccountModel.insertMany(hashedUsers);
 
             return res.status(201).json({ message: `${users.length} users created successfully.` });
         }
 
         // ✅ Single user case
-        const { username, email, password, role, owner } = req.body;
+        const { username, email, phone, password, role, owner } = req.body;
 
-        if (!username || !email || !password) {
+        if (!username || (!email && !phone) || !password) {
             return res.status(400).json({ message: "All fields required" });
         }
 
-        const exist = await AccountModel.findOne({ email });
-        if (exist) {
-            return res.status(400).json({ message: "Email already exists" });
-        }
+        // const exist = await AccountModel.findOne({ email });
+        // if (exist) {
+        //     return res.status(400).json({ message: "Email already exists" });
+        // }
+        const exist = await AccountModel.findOne({
+            $or: [
+                email ? { email } : null,
+                phone ? { phone } : null
+            ].filter(Boolean)
+        });
 
+        if (exist) {
+            return res.status(400).json({
+                message: "Email or phone already exists"
+            });
+        }
         const hashPassword = await bcrypt.hash(password, 10);
 
-        const newUser = new AccountModel({
+        const userData = {
             username,
-            email,
             password: hashPassword,
             role,
             owner,
             isVerified: true,
-        });
+        };
 
-        const account = await newUser.save();
+        if (email) userData.email = email;
+        if (phone) userData.phone = phone;
+
+        const newUser = new AccountModel(userData);
+        await newUser.save();
 
         // Email verification
         // const emailToken = jwt.sign({ userId: account._id }, jwtEmailSecret, { expiresIn: "15m" });
