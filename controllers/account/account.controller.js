@@ -312,66 +312,149 @@ export const resendVerificationEmail = async (req, res) => {
 
 
 // login
-export const loginAccount = async (req, res) => {
-    const { email, password, role } = req.body;
+// export const loginAccount = async (req, res) => {
+//     // accountMethod = Email or Phone 
+//     const { accountMethod, email, phone, password, role } = req.body;
 
-    // All Fields Validation
-    if (!email || !password || !role) {
-        return res.status(400).json({
-            message: "All fields are required"
-        });
+//     // All Fields Validation
+//     if (!accountMethod || !email || !password || !role) {
+//         return res.status(400).json({
+//             message: "All fields are required"
+//         });
+//     }
+
+//     try {
+//         // Email & Role Match Check
+//         const isAccount = await AccountModel.findOne({
+//             $or: [
+//                 email,
+//                 phone
+//             ],
+//             role: { $in: ["student", "subStudent"] }
+//         });
+
+//         // Check if account exists
+//         if (!isAccount) {
+//             return res.status(404).json({
+//                 message: "Invalid credentials (email or role mismatch)"
+//             });
+//         }
+
+//         // Check if account is verified
+//         if (!isAccount.isVerified) {
+//             return res.status(403).json({
+//                 message: "Please verify your email address before logging in.",
+//                 code: "EMAIL_NOT_VERIFIED"
+//             });
+//         }
+
+//         // Check if account status is not 'active'
+//         if (isAccount.status !== "active") {
+//             return res.status(400).json({
+//                 message: `Your account has been ${isAccount.status}. Please contact the admin.`
+//             });
+//         }
+
+//         // Compare Password
+//         const matchPassword = await bcrypt.compare(password, isAccount.password);
+//         if (!matchPassword) {
+//             return res.status(404).json({
+//                 message: "Invalid credentials (wrong password)"
+//             });
+//         }
+
+//         // Token Generation
+//         const accountToken = {
+//             id: isAccount._id.toString(),
+//             username: isAccount.username,
+//             email: isAccount.email,
+//             role: isAccount.role
+//         };
+
+//         const token = jwt.sign(accountToken, secretKey, { algorithm: 'HS256', expiresIn: '7d' });
+
+//         return res.status(200).json({
+//             message: "Login successfully!",
+//             token: token
+//         });
+
+//     } catch (error) {
+//         return serverError(res, error);
+//     }
+// };
+
+export const loginAccount = async (req, res) => {
+    const { accountMethod, email, phone, password, role } = req.body;
+
+    // Basic validation
+    if (!accountMethod || !password || !role) {
+        return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (accountMethod === "email" && !email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
+
+    if (accountMethod === "phone" && !phone) {
+        return res.status(400).json({ message: "Phone is required" });
     }
 
     try {
-        // Email & Role Match Check
-        const isAccount = await AccountModel.findOne({
-            email,
+        // Build dynamic query
+        const query = {
             role: { $in: ["student", "subStudent"] }
-        });
-
-        // Check if account exists
-        if (!isAccount) {
-            return res.status(404).json({
-                message: "Invalid credentials (email or role mismatch)"
-            });
-        }
-
-        // Check if account is verified
-        if (!isAccount.isVerified) {
-            return res.status(403).json({
-                message: "Please verify your email address before logging in.",
-                code: "EMAIL_NOT_VERIFIED"
-            });
-        }
-
-        // Check if account status is not 'active'
-        if (isAccount.status !== "active") {
-            return res.status(400).json({
-                message: `Your account has been ${isAccount.status}. Please contact the admin.`
-            });
-        }
-
-        // Compare Password
-        const matchPassword = await bcrypt.compare(password, isAccount.password);
-        if (!matchPassword) {
-            return res.status(404).json({
-                message: "Invalid credentials (wrong password)"
-            });
-        }
-
-        // Token Generation
-        const accountToken = {
-            id: isAccount._id.toString(),
-            username: isAccount.username,
-            email: isAccount.email,
-            role: isAccount.role
         };
 
-        const token = jwt.sign(accountToken, secretKey, { algorithm: 'HS256', expiresIn: '7d' });
+        if (accountMethod === "email") {
+            query.email = email;
+        } else {
+            query.phone = phone;
+        }
+
+        const isAccount = await AccountModel.findOne(query);
+
+        if (!isAccount) {
+            return res.status(404).json({
+                message: "Invalid credentials"
+            });
+        }
+
+        if (!isAccount.isVerified) {
+            return res.status(403).json({
+                message: "Please verify your account before logging in",
+                code: "ACCOUNT_NOT_VERIFIED"
+            });
+        }
+
+        if (isAccount.status !== "active") {
+            return res.status(400).json({
+                message: `Your account has been ${isAccount.status}. Please contact admin.`
+            });
+        }
+
+        const matchPassword = await bcrypt.compare(password, isAccount.password);
+        if (!matchPassword) {
+            return res.status(401).json({
+                message: "Invalid credentials"
+            });
+        }
+
+        const tokenPayload = {
+            id: isAccount._id.toString(),
+            username: isAccount.username,
+            role: isAccount.role,
+            email: isAccount.email,
+            phone: isAccount.phone
+        };
+
+        const token = jwt.sign(tokenPayload, secretKey, {
+            algorithm: "HS256",
+            expiresIn: "7d"
+        });
 
         return res.status(200).json({
-            message: "Login successfully!",
-            token: token
+            message: "Login successful",
+            token
         });
 
     } catch (error) {
