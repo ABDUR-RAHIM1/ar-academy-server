@@ -376,6 +376,7 @@ export const getSingleQuestionByAdmin = async (req, res) => {
 
 
 // ✅ GET - Get Questions by subjectName filter (partial match)
+// Ata Use Kora hocce na Ekhn. 
 export const getQuestionByCourseName = async (req, res) => {
     const { subjectName } = req.params;
 

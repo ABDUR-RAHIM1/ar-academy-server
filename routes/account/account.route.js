@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteOnlySubAdminStudentsAccount, deleteUserAccount, emailVerify, getAllAdmin, getAllStudentBySubAdmin, getAllUserForAdmin, getSinglAdmin, getSingleUser, loginAccount, registerAccount, resendVerificationEmail, updateAdminAccount, updateOnlySubAdminStudentAccountStatus, updateUserAccountStatus } from "../../controllers/account/account.controller.js";
+import { deleteOnlySubAdminStudentsAccount, deleteUserAccount, emailVerify, getAllAdmin, getAllStudentBySubAdmin, getAllUserForAdmin, getSinglAdmin, getSingleUser, loginAccount, registerAccount, resendVerificationEmail, updateAdminAccount, updateOnlySubAdminStudentAccountStatus, updateUserAccount, updateUserAccountStatus } from "../../controllers/account/account.controller.js";
 import { userVerify } from "../../middleware/userVerify.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { subAdminVerify } from "../../middleware/subAdminVerify.js";
@@ -30,5 +30,6 @@ router.delete("/delete/:accountId", adminVerify, deleteUserAccount); // user and
 router.delete("/subDelete/:accountId", subAdminVerify, deleteOnlySubAdminStudentsAccount)
 router.put("/updateStatusBySubAdmin/:studentId", subAdminVerify, updateOnlySubAdminStudentAccountStatus); // for admin
 
+router.put("/userUpdate/:userId", updateUserAccount)
 
 export default router;

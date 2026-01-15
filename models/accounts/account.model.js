@@ -26,6 +26,10 @@ const AccountSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    photo: {
+        type: String,
+        default: null
+    },
     isVerified: {
         type: Boolean,
         default: false

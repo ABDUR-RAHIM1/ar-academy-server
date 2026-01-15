@@ -759,3 +759,37 @@ export const updateOnlySubAdminStudentAccountStatus = async (req, res) => {
         serverError(res, error)
     }
 };
+
+
+
+/*========  Update User Account Information (password verification) Below ============ */
+export const updateUserAccount = async (req, res) => {
+    try {
+        const { accountMethod, username, email, phone, newPassword, photo } = req.body;
+        const { userId } = req.params;
+
+        const isUser = await AccountModel.findById(userId);
+        if (!isUser) return res.status(404).json({ message: "User Not found!" });
+
+
+        const updateData = { accountMethod, username, photo };
+
+        if (accountMethod === "email" && email) updateData.email = email;
+        if (accountMethod === "phone" && phone) updateData.phone = phone;
+
+        if (newPassword) {
+            updateData.password = await bcrypt.hash(newPassword, 10);
+        }
+
+        const isUpdated = await AccountModel.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+        if (!isUpdated) return res.status(404).json({ message: 'Update Failed!' });
+
+        res.status(200).json({ message: "Update Successful" });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+/*========  Update User Account Information (password verification) Above ============ */
