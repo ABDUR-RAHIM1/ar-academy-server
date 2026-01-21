@@ -11,11 +11,12 @@ import PurchasePakageModel from "../../models/purchaseCourse/purChasePakage.js";
 export const craetePackage = async (req, res) => {
     try {
 
-        const { name, duration, description } = req.body;
+        const { name, duration, price, description } = req.body;
 
         const newCourse = await packageModel({
             name,
             duration,
+            price,
             description
         });
 

@@ -9,7 +9,11 @@ const packagesSchema = mongoose.Schema({
         trim: true
     },
     duration: {
-        type: Number, // supposed: 1,2,3,4 (month)
+        type: Number,  
+        required: true
+    },
+    price: {
+        type: Number,  
         required: true
     },
     description: {
