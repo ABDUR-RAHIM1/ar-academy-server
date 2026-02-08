@@ -80,7 +80,7 @@ export const purchasePakage = async (req, res) => {
         const originalPackage = await packageModel.findById(packageId);
         if (!originalPackage) {
             return res.status(404).json({ message: "Package not found in our records!" });
-        }
+        };
 
         // ৪. অরিজিনাল ডাটা দিয়ে পারচেজ রেকর্ড তৈরি করা
         const newPurchase = new PurchasePakageModel({
@@ -109,3 +109,35 @@ export const purchasePakage = async (req, res) => {
 };
 /**=============== Packages Purchase by Sub Admin ==================== Above */
 
+// ======   get my Package (purchase) ===============> 
+
+export const getMyPackage = async (req, res) => {
+    try {
+
+        const subAdminId = req.subAdmin.id;
+
+        const subAdmin = await AdminAccountModel.findById(subAdminId);
+
+        if (!subAdmin) {
+            return res.status(404).json({ message: 'Sub Admin Not found!' });
+        }
+
+        if (!subAdmin.package) {
+            return res.status(400).json({ message: "No active package found." });
+        };
+
+
+        const myPackage = await PurchasePakageModel.findOne({
+            purchasedBy: subAdminId,
+        }).select("packageId")
+
+
+        return res.status(200).json(myPackage);
+
+    } catch (error) {
+        serverError(res, error);
+    }
+};
+
+
+// ======   get my Package (purchase) ^ ===============> 
