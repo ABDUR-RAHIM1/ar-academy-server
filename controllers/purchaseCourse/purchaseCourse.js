@@ -1,134 +1,297 @@
 
 import { serverError } from "../../helpers/serverError.js";
-import AccountModel from "../../models/accounts/account.model.js"; 
+import AccountModel from "../../models/accounts/account.model.js";
 import CourseModel from "../../models/courses/courseModel.js";
 import PurchaseCourseModel from "../../models/purchaseCourse/purchaseCourse.js";
 
+//  ata kaj korche , comment rekhe modify kortechi 
+// export const createPurchaseCourse = async (req, res) => {
+//     try {
+//         const { courseId } = req.body;
+//         const {id} = req.user;
+//         console.log({token})
+
+//         if (!id) {
+//             return res.status(400).json({ message: "Unauthorized" });
+//         }
+
+//         if (!courseId) {
+//             return res.status(400).json({ message: "Invalid course data" });
+//         }
+
+//         // 1️⃣ কোর্সের তথ্য নাও
+//         const course = await CourseModel.findById(courseId);
+//         if (!course) {
+//             return res.status(404).json({ message: "Course not found" });
+//         }
+
+//         // 2️⃣
+//         const student = await AccountModel.findById(id);
+
+
+//         if (!student) {
+//             return res.status(404).json({ message: `${token.role || "User"} পাওয়া যায়নি!` });
+//         }
+
+//         // 4️⃣ আগে থেকে কেনা আছে কিনা চেক করো
+//         const alreadyPurchased = student.courses.some(
+//             (c) => c.toString() === courseId
+//         );
+//         if (alreadyPurchased) {
+//             return res.status(400).json({ message: "আপনি ইতিমধ্যে এই কোর্সটি কিনেছেন" });
+//         }
+
+//         // 5️⃣ ডেমো পেমেন্ট ডেটা
+//         const demoDetails = {
+//             transactionId: "DXN0193121",
+//             paymentMethod: "BKASH",
+//             paymentStatus: "SUCCESS",
+//         };
+
+//         // 6️⃣ সাবস্ক্রিপশন তৈরি
+//         const newSubscription = new PurchaseCourseModel({
+//             student: id,
+//             role: role,
+//             course: courseId,
+//             paymentDetails: demoDetails, 
+//         });
+
+//         const subscription = await newSubscription.save();
+
+//         // 7️⃣ ইউজার একাউন্টে আপডেট
+//             await AccountModel.findByIdAndUpdate(token.id, {
+//                 $addToSet: { courses: courseId },
+//                 $set: { userTypePremium: true },
+//             });
+
+//         return res.status(201).json({
+//             message: "সফলভাবে কোর্স ক্রয় সম্পন্ন হয়েছে ✅"
+//         });
+
+//     } catch (error) {
+//         console.error("Purchase Course Error:", error);
+//         return serverError(res, error);
+//     }
+// };
 
 export const createPurchaseCourse = async (req, res) => {
     try {
-        const { courseId } = req.body;
-        const token = req.user;
 
-        if (!token) {
-            return res.status(400).json({ message: "Unauthorized" });
-        }
+        console.log("call hocce")
+        const { courseId, senderNumber, transactionId, method: paymentMethod, paidAmount } = req.body;
+        const { id, role } = req.user;
 
-        if (!courseId) {
-            return res.status(400).json({ message: "Invalid course data" });
-        }
+        // ১. বেসিক ভ্যালিডেশন
+        if (!id) return res.status(401).json({ message: "Unauthorized" });
+        if (!courseId) return res.status(400).json({ message: "কোর্স আইডি প্রয়োজন" });
 
-        // 1️⃣ কোর্সের তথ্য নাও
         const course = await CourseModel.findById(courseId);
-        if (!course) {
-            return res.status(404).json({ message: "Course not found" });
-        }
+        const student = await AccountModel.findById(id);
 
-        // 2️⃣
-        const student = await AccountModel.findById(token.id);
+        if (!course) return res.status(404).json({ message: "কোর্স পাওয়া যায়নি" });
+        if (!student) return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
 
-
-        if (!student) {
-            return res.status(404).json({ message: `${token.role || "User"} পাওয়া যায়নি!` });
-        }
-
-        // 4️⃣ আগে থেকে কেনা আছে কিনা চেক করো
-        const alreadyPurchased = student.courses.some(
-            (c) => c.toString() === courseId
-        );
-        if (alreadyPurchased) {
-            return res.status(400).json({ message: "আপনি ইতিমধ্যে এই কোর্সটি কিনেছেন" });
-        }
-
-        // 5️⃣ ডেমো পেমেন্ট ডেটা
-        const demoDetails = {
-            transactionId: "DXN0193121",
-            paymentMethod: "BKASH",
-            paymentStatus: "SUCCESS",
-        };
-
-        // 6️⃣ সাবস্ক্রিপশন তৈরি
-        const newSubscription = new PurchaseCourseModel({
-            subAdminOrStudent: token.id,
-            role: token.role,
-            course: courseId,
-            paymentDetails: demoDetails,
+        // ২. ডুপ্লিকেট চেক (অলরেডি কেনা বা পেন্ডিং আছে কিনা)
+        const alreadyInPurchaseList = await PurchaseCourseModel.findOne({
+            student: id,
+            course: courseId
         });
 
-        const subscription = await newSubscription.save();
+        if (alreadyInPurchaseList) {
+            if (alreadyInPurchaseList.status === 'active') {
+                return res.status(400).json({ message: "আপনি ইতিমধ্যে এই কোর্সটি কিনেছেন" });
+            }
+            if (alreadyInPurchaseList.status === 'pending') {
+                return res.status(400).json({ message: "আপনার একটি পেমেন্ট রিকোয়েস্ট ইতিমধ্যে পেন্ডিং আছে" });
+            }
+        }
 
-        // 7️⃣ ইউজার একাউন্টে আপডেট
-            await AccountModel.findByIdAndUpdate(token.id, {
+        // ৩. কোর্স টাইপ নির্ধারণ (Free vs Paid)
+        const isFree = Number(course.offerPrice) <= 0;
+
+        let purchaseData = {
+            student: id,
+            role: role,
+            course: courseId,
+            courseOfferPrice: Number(course.offerPrice),
+            paidAmount: isFree ? 0 : Number(paidAmount),
+        };
+
+        if (isFree) {
+            // --- ফ্রি কোর্সের লজিক ---
+            purchaseData.status = "active";
+            purchaseData.paymentDetails = {
+                paymentMethod: "free",
+                paymentStatus: "completed"
+            };
+
+            // ফ্রি হলে সরাসরি একাউন্টে কোর্স অ্যাড হবে
+            await AccountModel.findByIdAndUpdate(id, {
                 $addToSet: { courses: courseId },
                 $set: { userTypePremium: true },
             });
 
+        } else {
+            // --- পেইড কোর্সের লজিক ---
+            if (!transactionId || !senderNumber || !paidAmount) {
+                return res.status(400).json({ message: "পেমেন্ট তথ্য এবং টাকার সঠিক পরিমাণ দিন" });
+            }
+
+            // সিকিউরিটি নোট: যদি amount < course.offerPrice হয়, তাও আমরা 'pending' রাখছি।
+            // অ্যাডমিন ড্যাশবোর্ডে গিয়ে কোর্স অফার প্রাইস এবং পেইড অ্যামাউন্ট তুলনা করে ডিসিশন নিবেন।
+
+            purchaseData.status = "pending";
+            purchaseData.paymentDetails = {
+                transactionId,
+                paymentMethod,
+                senderNumber,
+                paymentStatus: "pending"
+            };
+        }
+
+        // ৪. ডাটাবেসে সেভ করা
+        const newPurchase = new PurchaseCourseModel(purchaseData);
+        await newPurchase.save();
+
         return res.status(201).json({
-            message: "সফলভাবে কোর্স ক্রয় সম্পন্ন হয়েছে ✅"
+            status: isFree ? 200 : 201,
+            message: isFree
+                ? "সফলভাবে কোর্স এনরোলমেন্ট সম্পন্ন হয়েছে ✅"
+                : "আপনার পেমেন্ট রিকোয়েস্ট জমা হয়েছে। আমাদের অ্যাডমিন প্যানেল তথ্য যাচাই করে আপনাকে দ্রুত এক্সেস দিয়ে দিবে। ⏳"
         });
 
     } catch (error) {
         console.error("Purchase Course Error:", error);
-        return serverError(res, error);
+        return res.status(500).json({ message: "সার্ভার এরর! দয়া করে আবার চেষ্টা করুন।" });
     }
 };
 
 
+//  payment Status update and access the course
+export const updatePurchaseStatus = async (req, res) => {
+    const { purchaseId, newStatus } = req.body;
 
-//  admin can assign a plan for the user
-export const assignCourseByAdmin = async (req, res) => {
+
+    if (!purchaseId || !newStatus) {
+        return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
     try {
-        const { userId, course } = req.body;
-
-        // Validation
-        if (!userId || !course || !plan.key || !plan.days) {
-            return res.status(400).json({ message: "Invalid data provided" });
+        // ৩. পারচেজ রেকর্ডটি খুঁজে বের করা
+        const purchase = await PurchaseCourseModel.findById(purchaseId)
+        if (!purchase) {
+            throw new Error("Purchase record not found.");
         }
 
-        // Check existing active plan
+        // ৪. যদি আগে থেকেই একটিভ থাকে এবং আবারও একটিভ করতে বলা হয় 
+        if (purchase.status === 'active' && newStatus === 'active') {
+            throw new Error("This enrollment is already active.");
+        }
+
+        // ৫. যদি স্ট্যাটাস 'active' করতে বলা হয়, তবে স্টুডেন্টের একাউন্টে কোর্স ঢুকিয়ে দিন
+        if (newStatus === 'active') {
+            await AccountModel.findByIdAndUpdate(
+                purchase.student,
+                { $addToSet: { courses: purchase.course } },
+            );
+        }
+
+
+        //  jodi payment statuc active na hoy tahole account theke courseId remove hobe 
+        if (newStatus !== 'active' && purchase.status === 'active') {
+            await AccountModel.findByIdAndUpdate(
+                purchase.student,
+                { $pull: { courses: purchase.course } },
+            );
+        }
+
+        // ৭. পারচেজ স্ট্যাটাস আপডেট করা
+        purchase.status = newStatus;
+        await purchase.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Status updated to ${newStatus} successfully.`,
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong during status update."
+        });
+    }
+};
+
+
+//  admin can assign a plan for the user
+ 
+export const assignCourseByAdmin = async (req, res) => {
+    try {
+        const { studentId, courseId } = req.body;
+
+        // ১. ভ্যালিডেশন (userId এর বদলে studentId ব্যবহার করা হয়েছে)
+        if (!studentId || !courseId) {
+            return res.status(400).json({ message: "Student ID and Course ID are required." });
+        }
+
+        // ২. কোর্সটি আসলেই এক্সিস্ট করে কি না এবং সেটির প্রাইস কত তা চেক করা
+        const course = await CourseModel.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ message: "Course not found." });
+        }
+
+        // ৩. অলরেডি এই কোর্সে একটিভ এনরোলমেন্ট আছে কি না চেক করা
+        // (আপনি চাইলে লজিক এমন করতে পারেন যে একটা স্টুডেন্ট মাল্টিপল কোর্স নিতে পারবে, 
+        // সেক্ষেত্রে query-তে course: courseId যোগ করতে হবে)
         const isExitPurchase = await PurchaseCourseModel.findOne({
-            user: userId,
+            student: studentId,
+            course: courseId,
             status: 'active'
         });
 
         if (isExitPurchase) {
             return res.status(400).json({
-                message: "User already has an active plan"
+                message: "User already has an active enrollment for this course."
             });
         }
 
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(startDate.getDate() + plan.days);
-
+        // ৪. নতুন পারচেজ রেকর্ড তৈরি (Manual Entry)
         const newSubscription = new PurchaseCourseModel({
-            user: userId,
-            planName: plan.key,
-            planLabel: plan.label,
-            price: plan.price || 0,
-            endDate,
+            student: studentId,
+            course: courseId,
+            courseOfferPrice: course.offerPrice || 0, // কোর্সের বর্তমান দাম
+            paidAmount: 0, // যেহেতু অ্যাডমিন অ্যাসাইন করছে, তাই সাধারণত এটি ০ বা ফ্রি হয়
+            status: 'active', // অ্যাডমিন দিলে সরাসরি একটিভ হবে
+            purchaseDate: new Date(),
             paymentDetails: {
-                transactionId: "ADMIN-MANUAL",
-                paymentMethod: "ADMIN",
-                paymentStatus: "SUCCESS"
+                paymentMethod: 'manual_by_admin',
+                paymentStatus: 'completed',
+                transactionId: `ADMIN-${Date.now()}` // একটি ইউনিক ট্র্যাকিং আইডি
             }
         });
 
         const subscription = await newSubscription.save();
 
-        await AccountModel.findByIdAndUpdate(userId, {
-            $set: {
-                plan: subscription._id
+        // ৫. অ্যাকাউন্টে কোর্স আইডি পুশ করা
+        // $addToSet ব্যবহার করা হয়েছে যাতে ডুপ্লিকেট না হয়
+        await AccountModel.findByIdAndUpdate(studentId, {
+            $addToSet: {
+                courses: courseId
             }
         });
 
         return res.status(201).json({
-            message: "Plan assigned to user successfully by admin."
+            success: true,
+            message: "Course assigned successfully by admin.",
+            data: subscription
         });
 
     } catch (error) {
         console.error("Assign Plan by Admin Error:", error);
-        return res.status(500).json({ message: "Server error" });
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
     }
 };
 
@@ -140,6 +303,8 @@ export const getMyCourse = async (req, res) => {
 
         const hasCourse = await PurchaseCourseModel.find({ user: id })
             .populate("course")
+
+        console.log(id, hasCourse)
 
         if (!hasCourse) {
             return res.status(404).json({
@@ -159,7 +324,7 @@ export const getAllPurchaseCourse = async (req, res) => {
     try {
 
         const purchaseAll = await PurchaseCourseModel.find()
-            .populate("user", "username email _id")
+            .populate("student", "username email phone _id")
 
         res.status(200).json(purchaseAll)
 
