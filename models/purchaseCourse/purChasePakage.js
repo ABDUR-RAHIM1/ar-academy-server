@@ -1,41 +1,34 @@
 import mongoose from "mongoose";
 
-//  agulor kaj kora hoyni akhono 
 const PurchasePakageSchema = new mongoose.Schema({
-    packageId: {
+    subAdmin: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'AdminAuthAccount',
         required: true
     },
-    purchasedBy: {
+    package: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "AdminAuthAccount",
+        ref: 'Packages',
         required: true
     },
-    name: {
+    purchaseDate: { type: Date, default: Date.now },
+
+    packageOfferPrice: { type: Number, default: 0 },
+    paidAmount: { type: Number, default: 0 },
+    status: {
         type: String,
-        required: true
+        enum: ['pending', 'active', 'rejected'],
+        default: 'pending'
     },
 
-    duration: {
-        type: Number,
-        required: true
+    paymentDetails: {
+        transactionId: { type: String, sparse: true },
+        paymentMethod: { type: String }, // 'bkash', 'nagad', 'rocket', 'free'
+        senderNumber: { type: String },
+        paymentStatus: { type: String },
     },
+}, { timestamps: true });
 
-    purchasedAt: {
-        type: Date,
-        default: Date.now
-    },
-
-    // expiresAt: {
-    //     type: Date,
-    //     required: true
-    // },
-
-    isActive: {
-        type: Boolean,
-        default: true
-    }
-});
 
 const PurchasePakageModel = mongoose.model("PurchasePakage", PurchasePakageSchema);
 export default PurchasePakageModel;

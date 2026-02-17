@@ -9,16 +9,16 @@ const packagesSchema = mongoose.Schema({
         trim: true
     },
     duration: {
-        type: Number,  
+        type: Number,
         required: true
     },
     price: {
-        type: Number,  
+        type: Number,
         required: true
     },
     description: {
         type: String,
-    },
+    },   
 });
 
 

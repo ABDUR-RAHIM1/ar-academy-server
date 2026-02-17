@@ -1,10 +1,7 @@
-
 import { serverError } from "../../helpers/serverError.js";
 import AdminAccountModel from "../../models/accounts/adminAccountModel.js";
 import packageModel from "../../models/courses/packageModel/packageModel.js";
 import PurchasePakageModel from "../../models/purchaseCourse/purChasePakage.js";
-
-
 
 
 /**=============== Packages Crated By Admin  ==================== Below */
@@ -13,7 +10,7 @@ export const craetePackage = async (req, res) => {
 
         const { name, duration, price, description } = req.body;
 
-        const newCourse = await packageModel({
+        const newCourse = await packageModel.create({
             name,
             duration,
             price,
@@ -35,7 +32,7 @@ export const craetePackage = async (req, res) => {
 /**=============== Packages Crated By Admin  ==================== Above  */
 
 
-/* ================== Packages get all by subAdmin and superAdmin Below=================> */
+/* ================== Packages get all by subAdmin and superAdmin Below  ============> */
 export const getAllPackages = async (req, res) => {
     try {
 
@@ -54,63 +51,124 @@ export const getAllPackages = async (req, res) => {
 
 
 
+/* ================== Get All Purchased Packages by admin Below  ============> */
+export const getAllPurchasedPackages = async (req, res) => {
+    try {
+
+        const purchased = await PurchasePakageModel.find()
+            .populate("subAdmin", "username email phone _id")
+
+        res.status(200).json(purchased);
+
+    } catch (error) {
+
+        return res.status(500).json({
+            message: "Internal Server error"
+        })
+    }
+}
+/* ================== Get All Purchased Packages by admin Above =================> */
+
+
+
+
 /**=============== Packages Purchase by Sub Admin ==================== Below */
+
 export const purchasePakage = async (req, res) => {
     try {
-        const { packageId } = req.body;
-        const subAdminId = req.subAdmin.id;
 
+        const { packageId, senderNumber, transactionId, method: paymentMethod, paidAmount } = req.body;
 
-        if (!packageId) {
-            return res.status(400).json({ message: "Package ID is required" });
-        }
+        const { id, role } = req.subAdmin;
 
-        // ১. সাব এডমিন চেক
-        const subAdmin = await AdminAccountModel.findById(subAdminId);
-        if (!subAdmin) {
-            return res.status(404).json({ message: 'Sub Admin Not found!' });
-        }
+        // ১. বেসিক ভ্যালিডেশন
+        if (!id) return res.status(401).json({ message: "Unauthorized" });
+        if (!packageId) return res.status(400).json({ message: "কোর্স আইডি প্রয়োজন" });
 
-        // ২. চেক করা যে আগে থেকেই প্যাকেজ আছে কিনা (তোমার আগের রিকোয়েস্ট অনুযায়ী)
-        if (subAdmin.package) {
-            return res.status(400).json({ message: "You already have an active package." });
-        }
+        //  course mean package 
+        const isPackage = await packageModel.findById(packageId);
+        const subAdmin = await AdminAccountModel.findById(id);
 
-        // ৩. মূল প্যাকেজ টেবিল থেকে ডাটা ফেচ করা (সবচেয়ে গুরুত্বপূর্ণ ধাপ)
-        const originalPackage = await packageModel.findById(packageId);
-        if (!originalPackage) {
-            return res.status(404).json({ message: "Package not found in our records!" });
-        };
+        if (!isPackage) return res.status(404).json({ message: "কোর্স পাওয়া যায়নি" });
+        if (!subAdmin) return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
 
-        // ৪. অরিজিনাল ডাটা দিয়ে পারচেজ রেকর্ড তৈরি করা
-        const newPurchase = new PurchasePakageModel({
-            name: originalPackage.name,
-            duration: originalPackage.duration,
-            isActive: true,
-            purchasedBy: subAdminId,
-            packageId: originalPackage._id,
+        // ২. ডুপ্লিকেট চেক (অলরেডি কেনা বা পেন্ডিং আছে কিনা)
+        const alreadyInPurchaseList = await PurchasePakageModel.findOne({
+            subAdmin: id,
+            package: packageId
         });
 
-        const savedPurchase = await newPurchase.save();
+        if (alreadyInPurchaseList) {
+            if (alreadyInPurchaseList.status === 'active') {
+                return res.status(400).json({ message: "আপনি ইতিমধ্যে এই কোর্সটি কিনেছেন" });
+            }
+            if (alreadyInPurchaseList.status === 'pending') {
+                return res.status(400).json({ message: "আপনার একটি পেমেন্ট রিকোয়েস্ট ইতিমধ্যে পেন্ডিং আছে" });
+            }
+        }
 
-        // ৫. এডমিন একাউন্টে রেফারেন্স সেভ করা
-        subAdmin.package = savedPurchase._id;
-        await subAdmin.save();
+        // ৩. কোর্স টাইপ নির্ধারণ (Free vs Paid)
+        const isFree = Number(isPackage.price) <= 0;
 
-        res.status(201).json({
-            message: "Package Purchased Successfully",
-            package: savedPurchase
+        let purchaseData = {
+            subAdmin: id,
+            role: role,
+            package: packageId,
+            packageOfferPrice: Number(isPackage.price),
+            paidAmount: isFree ? 0 : Number(paidAmount),
+        };
+
+        if (isFree) {
+            // --- ফ্রি কোর্সের লজিক ---
+            purchaseData.status = "active";
+            purchaseData.paymentDetails = {
+                paymentMethod: "free",
+                paymentStatus: "completed"
+            };
+
+            // ফ্রি হলে সরাসরি একাউন্টে কোর্স অ্যাড হবে
+            await AdminAccountModel.findByIdAndUpdate(id, {
+                $set: { package: packageId },
+            });
+
+        } else {
+            // --- পেইড কোর্সের লজিক ---
+            if (!transactionId || !senderNumber || !paidAmount) {
+                return res.status(400).json({ message: "পেমেন্ট তথ্য এবং টাকার সঠিক পরিমাণ দিন" });
+            }
+
+            // সিকিউরিটি নোট: যদি amount < course.offerPrice হয়, তাও আমরা 'pending' রাখছি।
+            // অ্যাডমিন ড্যাশবোর্ডে গিয়ে কোর্স অফার প্রাইস এবং পেইড অ্যামাউন্ট তুলনা করে ডিসিশন নিবেন।
+
+            purchaseData.status = "pending";
+            purchaseData.paymentDetails = {
+                transactionId,
+                paymentMethod,
+                senderNumber,
+                paymentStatus: "pending"
+            };
+        }
+
+        // ৪. ডাটাবেসে সেভ করা
+        const newPurchase = new PurchasePakageModel(purchaseData);
+        await newPurchase.save();
+
+        return res.status(201).json({
+            status: isFree ? 200 : 201,
+            message: isFree
+                ? "সফলভাবে প্যাকেজ যুক্ত হয়েছে ✅"
+                : "আপনার পেমেন্ট রিকোয়েস্ট জমা হয়েছে। আমাদের অ্যাডমিন প্যানেল তথ্য যাচাই করে আপনাকে দ্রুত এক্সেস দিয়ে দিবে। ⏳"
         });
 
     } catch (error) {
-        console.log(error)
-        serverError(res, error);
+        console.error("Purchase Course Error:", error);
+        return res.status(500).json({ message: "সার্ভার এরর! দয়া করে আবার চেষ্টা করুন।" });
     }
 };
+
 /**=============== Packages Purchase by Sub Admin ==================== Above */
 
 // ======   get my Package (purchase) ===============> 
-
 export const getMyPackage = async (req, res) => {
     try {
 
@@ -128,8 +186,9 @@ export const getMyPackage = async (req, res) => {
 
 
         const myPackage = await PurchasePakageModel.findOne({
-            purchasedBy: subAdminId,
-        }).select("packageId")
+            subAdmin: subAdminId,
+        }).select("package")
+
 
 
         return res.status(200).json(myPackage);
@@ -138,6 +197,61 @@ export const getMyPackage = async (req, res) => {
         serverError(res, error);
     }
 };
+// ======   get my Package (purchase) ^ ===============>    
 
 
-// ======   get my Package (purchase) ^ ===============> 
+//  payment Status update and access the course
+export const updatePurchasePackageStatus = async (req, res) => {
+    const { purchaseId, newStatus } = req.body;
+
+
+    if (!purchaseId || !newStatus) {
+        return res.status(400).json({ success: false, message: "Missing required fields." });
+    }
+
+    try {
+        // ৩. পারচেজ রেকর্ডটি খুঁজে বের করা
+        const purchase = await PurchasePakageModel.findById(purchaseId)
+        if (!purchase) {
+            throw new Error("Purchase record not found.");
+        }
+
+        // ৪. যদি আগে থেকেই একটিভ থাকে এবং আবারও একটিভ করতে বলা হয় 
+        if (purchase.status === 'active' && newStatus === 'active') {
+            throw new Error("This enrollment is already active.");
+        }
+
+        // ৫. যদি স্ট্যাটাস 'active' করতে বলা হয়, তবে স্টুডেন্টের একাউন্টে কোর্স ঢুকিয়ে দিন
+        if (newStatus === 'active') {
+            await AdminAccountModel.findByIdAndUpdate(
+                purchase.subAdmin,
+                { $set: { package: purchase.package } },
+            );
+        }
+
+
+        //  jodi payment statuc active na hoy tahole account theke courseId remove hobe 
+        if (newStatus !== 'active' && purchase.status === 'active') {
+            await AdminAccountModel.findByIdAndUpdate(
+                purchase.subAdmin,
+                { $unset: { package: "" } }
+            );
+        }
+
+        // ৭. পারচেজ স্ট্যাটাস আপডেট করা
+        purchase.status = newStatus;
+        await purchase.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Status updated to ${newStatus} successfully.`,
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Something went wrong during status update."
+        });
+    }
+};
+

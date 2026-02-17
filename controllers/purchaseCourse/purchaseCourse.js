@@ -4,81 +4,12 @@ import AccountModel from "../../models/accounts/account.model.js";
 import CourseModel from "../../models/courses/courseModel.js";
 import PurchaseCourseModel from "../../models/purchaseCourse/purchaseCourse.js";
 
-//  ata kaj korche , comment rekhe modify kortechi 
-// export const createPurchaseCourse = async (req, res) => {
-//     try {
-//         const { courseId } = req.body;
-//         const {id} = req.user;
-//         console.log({token})
-
-//         if (!id) {
-//             return res.status(400).json({ message: "Unauthorized" });
-//         }
-
-//         if (!courseId) {
-//             return res.status(400).json({ message: "Invalid course data" });
-//         }
-
-//         // 1️⃣ কোর্সের তথ্য নাও
-//         const course = await CourseModel.findById(courseId);
-//         if (!course) {
-//             return res.status(404).json({ message: "Course not found" });
-//         }
-
-//         // 2️⃣
-//         const student = await AccountModel.findById(id);
-
-
-//         if (!student) {
-//             return res.status(404).json({ message: `${token.role || "User"} পাওয়া যায়নি!` });
-//         }
-
-//         // 4️⃣ আগে থেকে কেনা আছে কিনা চেক করো
-//         const alreadyPurchased = student.courses.some(
-//             (c) => c.toString() === courseId
-//         );
-//         if (alreadyPurchased) {
-//             return res.status(400).json({ message: "আপনি ইতিমধ্যে এই কোর্সটি কিনেছেন" });
-//         }
-
-//         // 5️⃣ ডেমো পেমেন্ট ডেটা
-//         const demoDetails = {
-//             transactionId: "DXN0193121",
-//             paymentMethod: "BKASH",
-//             paymentStatus: "SUCCESS",
-//         };
-
-//         // 6️⃣ সাবস্ক্রিপশন তৈরি
-//         const newSubscription = new PurchaseCourseModel({
-//             student: id,
-//             role: role,
-//             course: courseId,
-//             paymentDetails: demoDetails, 
-//         });
-
-//         const subscription = await newSubscription.save();
-
-//         // 7️⃣ ইউজার একাউন্টে আপডেট
-//             await AccountModel.findByIdAndUpdate(token.id, {
-//                 $addToSet: { courses: courseId },
-//                 $set: { userTypePremium: true },
-//             });
-
-//         return res.status(201).json({
-//             message: "সফলভাবে কোর্স ক্রয় সম্পন্ন হয়েছে ✅"
-//         });
-
-//     } catch (error) {
-//         console.error("Purchase Course Error:", error);
-//         return serverError(res, error);
-//     }
-// };
 
 export const createPurchaseCourse = async (req, res) => {
     try {
 
-        console.log("call hocce")
         const { courseId, senderNumber, transactionId, method: paymentMethod, paidAmount } = req.body;
+        
         const { id, role } = req.user;
 
         // ১. বেসিক ভ্যালিডেশন
