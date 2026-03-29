@@ -7,16 +7,16 @@ import ResultsModel from "../../models/results/results.model.js";
 // POST - Submit Question Paper
 export const submitQuestions = async (req, res) => {
 
-    const { question: questionId, results, correctAns, wrongAns, skip, totalmark, nagetiveMark, passMark, isPass, isRetake, totalQuestions } = req.body;
+    const { examType, question: questionId, results, correctAns, wrongAns, skip, totalmark, nagetiveMark, passMark, isPass, isRetake, totalQuestions } = req.body;
     const { id } = req.user
- 
+
 
     try {
 
 
         // ✅ Check if user already participated
         const exam = await QuestionsModel.findById(questionId);
-    
+
         if (!exam) {
             return res.status(404).json({ message: "পরিক্ষা খুজে পাওয়া যায়নি" });
         }
@@ -26,6 +26,9 @@ export const submitQuestions = async (req, res) => {
         if (alreadyParticipated) {
             return res.status(400).json({ message: "তুমি পরীক্ষাটি একবার দিয়ে ফেলেছ!" });
         }
+
+        // ==   MCQ or Written 
+        let resultPublishedStatus = examType === "mcq" ? true : false;
 
         const newResult = new ResultsModel({
             user: id,
@@ -40,6 +43,7 @@ export const submitQuestions = async (req, res) => {
             isPass,
             isRetake,
             totalQuestions,
+            isPublished: resultPublishedStatus
         });
 
         await newResult.save();
@@ -116,7 +120,7 @@ export const getResultsBySubAdmin = async (req, res) => {
 export const getMyResults = async (req, res) => {
     const { id } = req.user;
     try {
-        const myResults = await ResultsModel.find({ user: id })
+        const myResults = await ResultsModel.find({ user: id, isPublished: true })
             .sort({ createdAt: -1 })
             .select("-results")
             .populate("question", "subjectName questionType");

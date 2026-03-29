@@ -13,8 +13,7 @@ router.post("/assign", adminVerify, assignCourseByAdmin)
 
 // payment status update and assing course or remove course from user/ student account
 router.put("/updateStatus", adminVerify, updatePurchaseStatus)
-router.post("/createByAdmin", adminVerify, assignCourseByAdmin) // manualy assign by admin in dashboard
-
+ 
 router.get("/me", userVerify, getMyCourse) // ata maybe use hocce na
 router.get("/all", adminVerify, getAllPurchaseCourse)
 router.delete("/delete/:planId", userVerify, deleteMyCourse)
