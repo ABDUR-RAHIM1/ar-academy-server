@@ -5,6 +5,7 @@ import { backendUrl, clientUrl, jwtEmailSecret, roles, secretKey } from "../../c
 import AccountModel from "../../models/accounts/account.model.js";
 import { serverError } from "../../helpers/serverError.js";
 import { sendEmail } from "../../utils/email/email.js";
+import mongoose from "mongoose";
 
 //  register 
 // export const registerAccount = async (req, res) => {
@@ -102,10 +103,7 @@ export const registerAccount = async (req, res) => {
                 ]
             });
 
-            // if (exists.length > 0) {
-            //     const existEmails = exists.map(e => e.email);
-            //     return res.status(400).json({ message: `Email(s) already exist: ${existEmails.join(", ")}` });
-            // }
+
 
             if (exists.length > 0) {
                 const duplicates = exists.map(u => {
@@ -120,21 +118,17 @@ export const registerAccount = async (req, res) => {
                 });
             }
 
-            // Hash password & mark verified true
-            // const hashed = await Promise.all(
-            //     users.map(async (u) => ({
-            //         ...u,
-            //         password: await bcrypt.hash(String(u.password || ""), 10),
-
-            //     }))
-            // );
 
             const hashedUsers = await Promise.all(users.map(async u => {
                 const obj = {
                     username: u.username,
                     accountMethod: u.accountMethod,
-                    password: await bcrypt.hash(u.password, 10),
-                    isVerified: true
+                    password: await bcrypt.hash(String(u.password), 10),
+                    isVerified: true,
+                    owner: u.owner,
+                    status: u.status,
+                    role: u.role,
+                    courses: u.courses
                 };
 
                 if (u.email) obj.email = u.email;
@@ -142,6 +136,7 @@ export const registerAccount = async (req, res) => {
 
                 return obj;
             }));
+
             await AccountModel.insertMany(hashedUsers);
 
             return res.status(201).json({ message: `${users.length} users created successfully.` });
@@ -501,8 +496,9 @@ export const getAllStudentBySubAdmin = async (req, res) => {
 
         const { id } = req.subAdmin
 
-        const isSubStudent = await AccountModel.find({ owner: id }).select("-password")
-
+        const ownerId = new mongoose.Types.ObjectId(id);
+        const isSubStudent = await AccountModel.find({ owner: ownerId }).select("-password")
+      
         if (!isSubStudent) {
             return res.status(404).json({
                 message: "User Not found"
@@ -551,7 +547,7 @@ export const getSinglAdmin = async (req, res) => {
 }
 
 
-//  Update User  Status (admin authenticatiob guard add korte hbe)
+//  Update User  Status (admin authentication guard add korte hbe)
 export const updateUserAccountStatus = async (req, res) => {
     const { userId } = req.params;
     const { status } = await req.body;

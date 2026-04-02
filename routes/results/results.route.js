@@ -1,6 +1,6 @@
 // routes/resultsRoute.js
 import express from "express";
-import { getMyResults, getResultById, getResults, getResultsBySubAdmin, submitQuestions } from "../../controllers/results/results.controller.js";
+import { getMyResults, getResultById, getResults, getResultsBySubAdmin, publishedWrittenResult, submitQuestions } from "../../controllers/results/results.controller.js";
 import { userVerify } from "../../middleware/userVerify.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { subAdminVerify } from "../../middleware/subAdminVerify.js";
@@ -15,3 +15,7 @@ router.get("/subAdmin", subAdminVerify, isSubAdminWithPackage, getResultsBySubAd
 router.get("/my", userVerify, getMyResults);  // speepic result for user
 router.get("/details/:resultId", getResultById); // GET /api/results/:resultId
 export default router;
+
+//  suhdu admin / subAdmin update korte parbe 
+router.put("/update/published/:resultId", adminVerify, publishedWrittenResult);
+router.put("/update/publishedBySubAdmin/:resultId", subAdminVerify, publishedWrittenResult);

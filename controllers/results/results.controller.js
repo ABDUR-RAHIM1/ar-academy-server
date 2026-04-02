@@ -158,3 +158,61 @@ export const getResultById = async (req, res) => {
         });
     }
 };
+
+//  <==============   Written Exam  Result Published By Admin (Beloew) =============> 
+
+export const publishedWrittenResult = async (req, res) => {
+    try {
+        const { resultId } = req.params;
+        const marks = req.body;
+
+        const role = req?.admin || req?.subAdmin
+        
+
+        const result = await ResultsModel.findById(resultId);
+
+        if (!result) {
+            return res.status(404).json({
+                message: 'Result Not Found!'
+            });
+        }
+
+        // ম্যাপ করে প্রাপ্ত নম্বর আপডেট করা
+        const updatedResults = result.results.map(item => {
+            if (marks[item.id] !== undefined) {
+
+                return {
+                    ...item.toObject ? item.toObject() : item,
+                    obtainMarks: Number(marks[item.id])
+                };
+            }
+            return item;
+        });
+
+
+        const totalObtainedMarks = updatedResults.reduce((acc, curr) => acc + (Number(curr.obtainMarks) || 0), 0);
+
+        result.results = updatedResults;
+        result.totalmark = totalObtainedMarks;
+        result.isPublished = true;
+
+
+        result.isPass = totalObtainedMarks >= result.question.passMark;
+
+        result.markModified('results');
+
+        await result.save();
+
+        return res.status(200).json({
+            message: "Result Has been Published",
+        });
+
+    } catch (error) {
+        console.error("Publish Error:", error);
+        res.status(500).json({
+            message: "Failed to Published Result"
+        });
+    }
+}
+
+//  <==============   Written Exam  Result Published By Admin (Above) ==============> 

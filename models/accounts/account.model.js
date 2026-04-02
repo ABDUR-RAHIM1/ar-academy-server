@@ -6,6 +6,7 @@ const AccountSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    //  email / phone
     accountMethod: {
         type: String,
         required: true,
@@ -43,6 +44,7 @@ const AccountSchema = new mongoose.Schema({
             mongoose.Schema.Types.ObjectId
         ],
         ref: 'Courses',
+        trim: true,
         default: []
     },
     role: {
