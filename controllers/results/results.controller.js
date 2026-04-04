@@ -167,7 +167,7 @@ export const publishedWrittenResult = async (req, res) => {
         const marks = req.body;
 
         const role = req?.admin || req?.subAdmin
-        
+
 
         const result = await ResultsModel.findById(resultId);
 
@@ -197,9 +197,11 @@ export const publishedWrittenResult = async (req, res) => {
         result.isPublished = true;
 
 
-        result.isPass = totalObtainedMarks >= result.question.passMark;
+        result.isPass = totalObtainedMarks >= result.passMark;
 
-        result.markModified('results');
+
+        // console.log(totalObtainedMarks, result.isPass, result.passMark, result.totalmark)
+       
 
         await result.save();
 

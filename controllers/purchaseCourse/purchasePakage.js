@@ -187,8 +187,7 @@ export const getMyPackage = async (req, res) => {
 
         const myPackage = await PurchasePakageModel.findOne({
             subAdmin: subAdminId,
-        }).select("package")
-
+        }).select("package createdAt")
 
 
         return res.status(200).json(myPackage);
