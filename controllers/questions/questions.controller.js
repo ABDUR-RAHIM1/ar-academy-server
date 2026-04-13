@@ -6,6 +6,8 @@ import mongoose from "mongoose";
 
 // ✅ POST - Create New Questions
 // duel Access (admin , subAdmin)
+
+
 // export const postQuestions = async (req, res) => {
 //     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
 
@@ -15,7 +17,12 @@ import mongoose from "mongoose";
 
 //     try {
 
-//         const newQuestions = new QuestionsModel(
+//         if (!questionType || !questions) {
+//             return res.status(400).json({ message: "questionType and questions are required" });
+//         };
+
+
+//         let newQuestions = new QuestionsModel(
 //             {
 //                 course: courseId,
 //                 questionType,
@@ -32,6 +39,38 @@ import mongoose from "mongoose";
 //                 creatorRole: creator.role
 //             }
 //         );
+
+//         // Conditional validation
+//         if (questionType === "mcq") {
+//             // check MCQ-specific fields
+//             const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
+
+//             if (invalid) {
+//                 return res.status(400).json({ message: "MCQ questions missing fields" });
+//             };
+
+//             newQuestions.questions = questions;
+
+
+//         } else if (questionType === "written") {
+//             // check Written-specific fields
+//             const invalid = questions.some(q => !q.Question || !q.Subject);
+
+//             if (invalid) {
+//                 return res.status(400).json({ message: "Written questions missing Question field" });
+//             };
+
+//             const writtenQuestions = questions.map((q) => ({
+//                 ID: q.ID,
+//                 Question: q.Question,
+//                 CorrectAnswer: "",
+//                 Subject: q.Subject
+//             }));
+
+//             newQuestions.questions = writtenQuestions;
+
+//         };
+
 
 //         await newQuestions.save();
 
@@ -59,7 +98,6 @@ import mongoose from "mongoose";
 //         });
 //     }
 // };
-
 
 export const postQuestions = async (req, res) => {
     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
@@ -92,15 +130,42 @@ export const postQuestions = async (req, res) => {
                 creatorRole: creator.role
             }
         );
+        const errors = [];
+
+
 
         // Conditional validation
         if (questionType === "mcq") {
             // check MCQ-specific fields
-            const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
+            // const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
 
-            if (invalid) {
-                return res.status(400).json({ message: "MCQ questions missing fields" });
-            };
+            questions.forEach((q, index) => {
+                const missingFields = [];
+                const isEmpty = v => v == null || (typeof v === "string" && !v.trim());
+
+                if (isEmpty(q.Option1)) missingFields.push("Option1");
+                if (isEmpty(q.Option2)) missingFields.push("Option2");
+                if (isEmpty(q.Option3)) missingFields.push("Option3");
+                if (isEmpty(q.Option4)) missingFields.push("Option4");
+                if (isEmpty(q.CorrectAnswer)) missingFields.push("CorrectAnswer");
+                if (isEmpty(q.Subject)) missingFields.push("Subject");
+
+                if (missingFields.length > 0) {
+                    errors.push({
+                        row: index + 1,
+                        missingFields
+                    });
+                }
+            });
+
+
+
+            if (errors.length > 0) {
+                return res.status(400).json({
+                    message: "MCQ questions missing fields",
+                    errors
+                });
+            }
 
             newQuestions.questions = questions;
 
@@ -132,7 +197,6 @@ export const postQuestions = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
         if (error.name === "ValidationError") {
             // field-wise errors একটায় সাজানো
             const errors = {};
