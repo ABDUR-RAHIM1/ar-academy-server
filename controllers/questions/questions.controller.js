@@ -363,7 +363,7 @@ export const getSubAdminQuestions = async (req, res) => {
 
 
 
-// ---------------- getQuestionById Start (for Exam)  -----------------------------------
+// ---------------- getQuestionById Start (for Exam Details)  -----------------------------------
 // GET - Get Questions By questions Id (singel Question for Exam - only user)
 /*
  -> login user er id diye user check korbe . 

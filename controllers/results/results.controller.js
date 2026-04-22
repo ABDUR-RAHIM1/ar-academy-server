@@ -24,7 +24,7 @@ export const submitQuestions = async (req, res) => {
         const alreadyParticipated = exam.participant?.includes(id);
 
         if (alreadyParticipated) {
-            return res.status(400).json({ message: "তুমি পরীক্ষাটি একবার দিয়ে ফেলেছ!" });
+            return res.status(400).json({ message: "পরীক্ষাটি একবার দেওয়া হয়েছে!" });
         }
 
         // ==   MCQ or Written 
@@ -46,7 +46,7 @@ export const submitQuestions = async (req, res) => {
             isPublished: resultPublishedStatus
         });
 
-        await newResult.save();
+        const result = await newResult.save();
 
         // update participant list
         await QuestionsModel.findByIdAndUpdate(
@@ -55,7 +55,7 @@ export const submitQuestions = async (req, res) => {
             { new: true }
         );
 
-        res.status(201).json({ message: "সফল ভাবে জমা দেওয়া হয়েছে" });
+        res.status(201).json({ resultId: result._id, message: "সফল ভাবে জমা দেওয়া হয়েছে" });
 
     } catch (error) {
         console.log(error)
@@ -201,7 +201,7 @@ export const publishedWrittenResult = async (req, res) => {
 
 
         // console.log(totalObtainedMarks, result.isPass, result.passMark, result.totalmark)
-       
+
 
         await result.save();
 
