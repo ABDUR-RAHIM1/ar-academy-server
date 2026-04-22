@@ -256,6 +256,7 @@ export const getAllPurchaseCourse = async (req, res) => {
 
         const purchaseAll = await PurchaseCourseModel.find()
             .populate("student", "username email phone _id")
+            .populate("course", "name title")
 
         res.status(200).json(purchaseAll)
 
