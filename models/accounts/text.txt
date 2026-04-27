@@ -1,0 +1,9 @@
+
+# registration korar shomoy user ke kono password dite hobe na. user je mobile number dibe tar last 8 digit default password hisebe use hobe. ar user jodi email use kore tahole tar password hobe - 1-8 
+
+Registration Logic (Simplified):
+-------------------------------
+1. No password input in UI.
+2. If Mobile used: Password = Mobile.slice(-8)
+3. If Email used (without mobile): Password = @ er ager part+112. 
+4. Database Flag: is_password_updated = false (Default)

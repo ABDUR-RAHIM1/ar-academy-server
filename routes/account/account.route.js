@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteOnlySubAdminStudentsAccount, deleteUserAccount, emailVerify, getAllAdmin, getAllStudentBySubAdmin, getAllUserForAdmin, getSinglAdmin, getSingleUser, loginAccount, registerAccount, resendVerificationEmail, updateAdminAccount, updateOnlySubAdminStudentAccountStatus, updateUserAccount, updateUserAccountStatus } from "../../controllers/account/account.controller.js";
+import { deleteOnlySubAdminStudentsAccount, deleteUserAccount, emailVerify, getAllAdmin, getAllStudentBySubAdmin, getAllUserForAdmin, getSinglAdmin, getSingleUser, loginAccount, registerAccount, registerSingleStudent, resendVerificationEmail, updateAdminAccount, updateOnlySubAdminStudentAccountStatus, updateUserAccount, updateUserAccountStatus } from "../../controllers/account/account.controller.js";
 import { userVerify } from "../../middleware/userVerify.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { subAdminVerify } from "../../middleware/subAdminVerify.js";
@@ -7,6 +7,8 @@ import { subAdminVerify } from "../../middleware/subAdminVerify.js";
 const router = express.Router();
 
 //  root => /api/account/
+
+router.post("/singel-register", registerSingleStudent); // new 
 
 router.post("/register", registerAccount);
 

@@ -27,10 +27,6 @@ const AccountSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    is_password_updated: {
-        type:Boolean,
-        default:false 
-    },
     photo: {
         type: String,
         default: null

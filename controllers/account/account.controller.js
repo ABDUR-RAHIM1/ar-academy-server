@@ -6,67 +6,128 @@ import AccountModel from "../../models/accounts/account.model.js";
 import { serverError } from "../../helpers/serverError.js";
 import { sendEmail } from "../../utils/email/email.js";
 import mongoose from "mongoose";
+import { passwordGenaretor } from "../../utils/passwordGenaretor.js";
 
 //  register 
-// export const registerAccount = async (req, res) => {
-//     const { username, email, password, role, owner } = req.body;
 
-//     // Validate input
-//     if (!username || !email || !password) {
-//         return res.status(400).json({ message: "All Fields required" });
-//     }
+// export const registerAccount = async (req, res) => {
 
 //     try {
+//         // যদি একাধিক ইউজার আসে (array)
+//         if (Array.isArray(req.body)) {
+//             const users = req.body;
+//             // Validation
+//             for (const user of users) {
+//                 if (!user.username || !user.accountMethod || (!user.email && !user.phone) || !user.password) {
+//                     return res.status(400).json({ message: "All fields required for all users" });
+//                 }
+//             }
+
+//             const emails = users
+//                 .filter(u => u.email)
+//                 .map(u => u.email);
+
+//             const phones = users
+//                 .filter(u => u.phone)
+//                 .map(u => u.phone);
+
+//             const exists = await AccountModel.find({
+//                 $or: [
+//                     { email: { $in: emails } },
+//                     { phone: { $in: phones } }
+//                 ]
+//             });
 
 
-//         // Check if email exists
-//         const isExist = await AccountModel.findOne({ email });
-//         if (isExist) {
-//             return res.status(400).json({ message: "Email Already Exist" });
+
+//             if (exists.length > 0) {
+//                 const duplicates = exists.map(u => {
+//                     if (u.email && u.phone) return `${u.email} / ${u.phone}`;
+//                     if (u.email) return u.email;
+//                     if (u.phone) return u.phone;
+//                     return null;
+//                 }).filter(Boolean);
+
+//                 return res.status(400).json({
+//                     message: `Email/Phone already exist: ${duplicates.join(", ")}`
+//                 });
+//             }
+
+
+//             const hashedUsers = await Promise.all(users.map(async u => {
+//                 const obj = {
+//                     username: u.username,
+//                     accountMethod: u.accountMethod,
+//                     password: await bcrypt.hash(String(u.password), 10),
+//                     isVerified: true,
+//                     owner: u.owner,
+//                     status: u.status,
+//                     role: u.role,
+//                     courses: u.courses
+//                 };
+
+//                 if (u.email) obj.email = u.email;
+//                 if (u.phone) obj.phone = u.phone;
+
+//                 return obj;
+//             }));
+
+//             await AccountModel.insertMany(hashedUsers);
+
+//             return res.status(201).json({ message: `${users.length} users created successfully.` });
 //         }
 
-//         // Hash password
-//         const hashPassword = await bcrypt.hash(password, 10);
+//         // ✅ Single user case
+//         const { username, accountMethod, email, phone, password, role, owner } = req.body;
 
-//         // Create new user (unverified)
-//         const newUser = new AccountModel({
-//             username,
-//             email,
-//             password: hashPassword,
-//             role,
-//             isVerified: false,
-//             owner
+//         if (!username || !accountMethod || (!email && !phone) || !password) {
+//             return res.status(400).json({ message: "All fields required" });
+//         }
+
+//         const exist = await AccountModel.findOne({
+//             $or: [
+//                 email ? { email } : null,
+//                 phone ? { phone } : null
+//             ].filter(Boolean)
 //         });
 
-//         const account = await newUser.save();
+//         if (exist) {
+//             return res.status(400).json({
+//                 message: "Email or phone already exists"
+//             });
+//         }
+//         const hashPassword = await bcrypt.hash(password, 10);
 
-//         // Generate email verification token (valid 15 minutes)
-//         const emailToken = jwt.sign(
-//             { userId: account._id },
-//             jwtEmailSecret,
-//             { expiresIn: '15m' }
-//         );
-
-//         const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
-
-//         const options = {
-//             to: email,
-//             subject: `Welcome ${username}! Please Verify Your Email`,
-//             html: `
-//             <h2>Hi ${username},</h2>
-//             <p>Thanks for registering! Please verify your email by clicking the link below:</p>
-//             <a href="${verificationLink}">Click Me to Verify Email</a>
-//             <p>This link will expire in 15 minutes.</p>
-//           `,
+//         const userData = {
+//             username,
+//             accountMethod,
+//             password: hashPassword,
+//             role,
+//             owner,
+//             isVerified: true,
 //         };
 
-//         try {
-//             await sendEmail(options)
-//         } catch (err) {
-//             console.error("Email sending failed:", err.message);
-//         }
+//         if (email) userData.email = email;
+//         if (phone) userData.phone = phone;
 
-//         res.json({ message: "Register successful! Please check your email to verify your account." });
+//         const newUser = new AccountModel(userData);
+//         await newUser.save();
+
+//         // Email verification
+//         // const emailToken = jwt.sign({ userId: account._id }, jwtEmailSecret, { expiresIn: "15m" });
+//         // const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
+
+//         // await sendEmail({
+//         //     to: email,
+//         //     subject: `Welcome ${username}! Verify your email`,
+//         //     html: `<h2>Hi ${username},</h2>
+//         //            <p>Click to verify: <a href="${verificationLink}">Verify Email</a></p>
+//         //            <p>This link will expire in 15 minutes.</p>`,
+//         // });
+
+//         // return res.json({ message: "Register successful! Please check your email to verify your account." });
+
+//         return res.status(201).json({ message: "Register successful" });
 
 //     } catch (error) {
 //         console.error(error);
@@ -74,7 +135,73 @@ import mongoose from "mongoose";
 //     }
 // };
 
+//  genarel student register (singel Insert)
+export const registerSingleStudent = async (req, res) => {
+    try {
 
+        const { username, accountMethod, email, phone } = req.body;
+
+        const exist = await AccountModel.findOne({
+            $or: [
+                email ? { email } : null,
+                phone ? { phone } : null
+            ].filter(Boolean)
+        });
+
+
+
+        if (exist) {
+            return res.status(400).json({
+                message: "Email or phone already exists"
+            });
+        };
+
+
+        const defaultPass = passwordGenaretor(accountMethod, phone, email)
+
+
+        const hashPassword = await bcrypt.hash(defaultPass, 10);
+
+        const userData = {
+            username,
+            accountMethod,
+            email: email || null,
+            phone: phone || null,
+            password: hashPassword,
+            role: "student",
+            isVerified: true,
+            is_password_updated: false
+        };
+        const newUser = new AccountModel(userData);
+        await newUser.save();
+
+        const tokenPayload = {
+            id: newUser._id.toString(),
+            username: newUser.username,
+            role: newUser.role,
+            email: newUser.email,
+            phone: newUser.phone
+        };
+
+        const token = jwt.sign(tokenPayload, secretKey, {
+            algorithm: "HS256",
+            expiresIn: "7d"
+        });
+
+        return res.status(201).json({
+            message: "Registration successful!",
+            token
+        });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "Failed to register account"
+        })
+    }
+}
+
+//  sub Admin students register (Insert Many)
 export const registerAccount = async (req, res) => {
 
     try {
@@ -178,20 +305,6 @@ export const registerAccount = async (req, res) => {
         const newUser = new AccountModel(userData);
         await newUser.save();
 
-        // Email verification
-        // const emailToken = jwt.sign({ userId: account._id }, jwtEmailSecret, { expiresIn: "15m" });
-        // const verificationLink = `${backendUrl}/api/account/verify-email?token=${emailToken}`;
-
-        // await sendEmail({
-        //     to: email,
-        //     subject: `Welcome ${username}! Verify your email`,
-        //     html: `<h2>Hi ${username},</h2>
-        //            <p>Click to verify: <a href="${verificationLink}">Verify Email</a></p>
-        //            <p>This link will expire in 15 minutes.</p>`,
-        // });
-
-        // return res.json({ message: "Register successful! Please check your email to verify your account." });
-
         return res.status(201).json({ message: "Register successful" });
 
     } catch (error) {
@@ -199,8 +312,6 @@ export const registerAccount = async (req, res) => {
         serverError(res, error);
     }
 };
-
-
 
 //  email verify 
 export const emailVerify = async (req, res) => {
@@ -498,7 +609,7 @@ export const getAllStudentBySubAdmin = async (req, res) => {
 
         const ownerId = new mongoose.Types.ObjectId(id);
         const isSubStudent = await AccountModel.find({ owner: ownerId }).select("-password")
-      
+
         if (!isSubStudent) {
             return res.status(404).json({
                 message: "User Not found"
@@ -759,6 +870,35 @@ export const updateOnlySubAdminStudentAccountStatus = async (req, res) => {
 
 
 /*========  Update User Account Information (password verification) Below ============ */
+// export const updateUserAccount = async (req, res) => {
+//     try {
+//         const { accountMethod, username, email, phone, newPassword, photo } = req.body;
+//         const { userId } = req.params;
+
+//         const isUser = await AccountModel.findById(userId);
+//         if (!isUser) return res.status(404).json({ message: "User Not found!" });
+
+
+//         const updateData = { accountMethod, username, photo };
+
+//         if (accountMethod === "email" && email) updateData.email = email;
+//         if (accountMethod === "phone" && phone) updateData.phone = phone;
+
+//         if (newPassword) {
+//             updateData.password = await bcrypt.hash(newPassword, 10);
+//         }
+
+//         const isUpdated = await AccountModel.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+//         if (!isUpdated) return res.status(404).json({ message: 'Update Failed!' });
+
+//         res.status(200).json({ message: "Update Successful" });
+
+//     } catch (error) {
+//         console.log(error);
+//         return res.status(500).json({ message: "Internal Server Error" });
+//     }
+// }
+
 export const updateUserAccount = async (req, res) => {
     try {
         const { accountMethod, username, email, phone, newPassword, photo } = req.body;
@@ -767,7 +907,6 @@ export const updateUserAccount = async (req, res) => {
         const isUser = await AccountModel.findById(userId);
         if (!isUser) return res.status(404).json({ message: "User Not found!" });
 
-
         const updateData = { accountMethod, username, photo };
 
         if (accountMethod === "email" && email) updateData.email = email;
@@ -775,9 +914,15 @@ export const updateUserAccount = async (req, res) => {
 
         if (newPassword) {
             updateData.password = await bcrypt.hash(newPassword, 10);
+            updateData.is_password_updated = true; 
         }
 
-        const isUpdated = await AccountModel.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+        const isUpdated = await AccountModel.findByIdAndUpdate(
+            userId, 
+            { $set: updateData }, 
+            { new: true }
+        );
+
         if (!isUpdated) return res.status(404).json({ message: 'Update Failed!' });
 
         res.status(200).json({ message: "Update Successful" });
@@ -787,5 +932,6 @@ export const updateUserAccount = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
+
 
 /*========  Update User Account Information (password verification) Above ============ */
