@@ -47,6 +47,7 @@ export const getAllCoursesList = async (req, res) => {
 
         const courseList = await CourseModel.find({ courseType: "superAdmin" })
             .select("-description")
+            .sort({ createdAt: -1 })
         res.status(200).json(courseList)
 
     } catch (error) {
@@ -89,8 +90,6 @@ export const getMyCourseStudent = async (req, res) => {
 
         const student = await AccountModel.findById(id);
 
-
-
         if (!student) {
             return res.status(404).json({
                 message: `${token.role || "user"} খুঁজে পাওয়া যায়নি  `
@@ -108,7 +107,7 @@ export const getMyCourseStudent = async (req, res) => {
         // Step 3: Find all courses whose _id is in user's course array
         const hasCourse = await CourseModel.find({
             _id: { $in: student.courses }
-        })
+        }).sort({ createdAt: -1 })
 
         // Step 4: Return the courses
         return res.status(200).json(hasCourse);

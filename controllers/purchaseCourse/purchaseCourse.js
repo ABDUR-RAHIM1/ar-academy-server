@@ -6,106 +6,6 @@ import PurchaseCourseModel from "../../models/purchaseCourse/purchaseCourse.js";
 import sendTelegramMessage from "../../utils/email/telegram.js";
 
 
-// export const createPurchaseCourse = async (req, res) => {
-//     try {
-
-//         const { courseId, senderNumber, transactionId, method: paymentMethod, paidAmount } = req.body;
-
-//         const { id, username, role } = req.user;
-
-
-
-//         // ১. বেসিক ভ্যালিডেশন
-//         if (!id) return res.status(401).json({ message: "Unauthorized" });
-//         if (!courseId) return res.status(400).json({ message: "কোর্স আইডি প্রয়োজন" });
-
-//         const course = await CourseModel.findById(courseId);
-//         const student = await AccountModel.findById(id);
-
-//         if (!course) return res.status(404).json({ message: "কোর্স পাওয়া যায়নি" });
-//         if (!student) return res.status(404).json({ message: "ইউজার পাওয়া যায়নি" });
-
-//         // ২. ডুপ্লিকেট চেক (অলরেডি কেনা বা পেন্ডিং আছে কিনা)
-//         const alreadyInPurchaseList = await PurchaseCourseModel.findOne({
-//             student: id,
-//             course: courseId
-//         });
-
-//         if (alreadyInPurchaseList) {
-//             if (alreadyInPurchaseList.status === 'active') {
-//                 return res.status(400).json({ message: "আপনি ইতিমধ্যে এই কোর্সটি কিনেছেন" });
-//             }
-//             if (alreadyInPurchaseList.status === 'pending') {
-//                 return res.status(400).json({ message: "আপনার একটি পেমেন্ট রিকোয়েস্ট ইতিমধ্যে পেন্ডিং আছে" });
-//             }
-//         }
-
-
-
-//         // ৩. কোর্স টাইপ নির্ধারণ (Free vs Paid)
-//         const isFree = Number(course.offerPrice) <= 0;
-
-//         let purchaseData = {
-//             student: id,
-//             role: role,
-//             course: courseId,
-//             courseOfferPrice: Number(course.offerPrice),
-//             paidAmount: isFree ? 0 : Number(paidAmount),
-//         };
-
-//         if (isFree) {
-//             // --- ফ্রি কোর্সের লজিক ---
-//             purchaseData.status = "active";
-//             purchaseData.paymentDetails = {
-//                 paymentMethod: "free",
-//                 paymentStatus: "completed"
-//             };
-
-//             // ফ্রি হলে সরাসরি একাউন্টে কোর্স অ্যাড হবে
-//             await AccountModel.findByIdAndUpdate(id, {
-//                 $addToSet: { courses: courseId },
-//                 $set: { userTypePremium: true },
-//             });
-
-//         } else {
-//             // --- পেইড কোর্সের লজিক ---
-//             if (!transactionId || !senderNumber || !paidAmount) {
-//                 return res.status(400).json({ message: "পেমেন্ট তথ্য এবং টাকার সঠিক পরিমাণ দিন" });
-//             }
-
-//             // সিকিউরিটি নোট: যদি amount < course.offerPrice হয়, তাও আমরা 'pending' রাখছি।
-//             // অ্যাডমিন ড্যাশবোর্ডে গিয়ে কোর্স অফার প্রাইস এবং পেইড অ্যামাউন্ট তুলনা করে ডিসিশন নিবেন।
-
-//             purchaseData.status = "pending";
-//             purchaseData.paymentDetails = {
-//                 transactionId,
-//                 paymentMethod,
-//                 senderNumber,
-//                 paymentStatus: "pending"
-//             };
-//         }
-
-//         // ৪. ডাটাবেসে সেভ করা
-//         const newPurchase = new PurchaseCourseModel(purchaseData);
-//         await newPurchase.save();
-
-//         return res.status(201).json({
-//             status: isFree ? 200 : 201,
-//             message: isFree
-//                 ? "সফলভাবে কোর্স এনরোলমেন্ট সম্পন্ন হয়েছে ✅"
-//                 : "আপনার পেমেন্ট রিকোয়েস্ট জমা হয়েছে। আমাদের অ্যাডমিন প্যানেল তথ্য যাচাই করে আপনাকে দ্রুত এক্সেস দিয়ে দিবে। ⏳"
-//         });
-
-//     } catch (error) {
-//         console.error("Purchase Course Error:", error);
-//         return res.status(500).json({ message: "সার্ভার এরর! দয়া করে আবার চেষ্টা করুন।" });
-//     }
-// };
-
-
-//  payment Status update and access the course
-
-
 export const createPurchaseCourse = async (req, res) => {
     try {
 
@@ -374,9 +274,9 @@ export const getMyCourse = async (req, res) => {
 
         const hasCourse = await PurchaseCourseModel.find({ user: id })
             .populate("course")
+            .sort({ createdAt: -1 })
 
-        console.log(id, hasCourse)
-
+console.log("call")
         if (!hasCourse) {
             return res.status(404).json({
                 message: "কোন কোর্স নেই!"
