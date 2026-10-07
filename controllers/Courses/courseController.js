@@ -87,7 +87,6 @@ export const getSinglecourse = async (req, res) => {
 export const getMyCourseStudent = async (req, res) => {
     try {
         const { id } = req.user;
-
         const student = await AccountModel.findById(id);
 
         if (!student) {
@@ -107,7 +106,9 @@ export const getMyCourseStudent = async (req, res) => {
         // Step 3: Find all courses whose _id is in user's course array
         const hasCourse = await CourseModel.find({
             _id: { $in: student.courses }
-        }).sort({ createdAt: -1 })
+        })
+        .sort({ createdAt: -1 })
+        .select("_id name links regularPrice offerPrice duration startDate createdAt updatedAt")
 
         // Step 4: Return the courses
         return res.status(200).json(hasCourse);

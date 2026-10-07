@@ -1,0 +1,79 @@
+# 📚 Exam Management System — QuestionsModel Documentation
+
+## 1. Overview
+
+The `QuestionsModel` handles three distinct examination models within the platform:
+
+1. **Live Exam:** Traditional scheduled exams with a fixed calendar date and time.
+2. **Admission-Based Exam:** Dynamic exams scheduled relative to a student's enrollment date or exam creation date using a day offset.
+3. **Practice Exam:** Open-access exams available anytime without date or time restrictions.
+
+---
+
+## 2. Database Schema Structure (`QuestionsSchema`)
+
+### Question Item Sub-Schema (`QuestionsItemSchema`)
+
+* **`ID`**: Unique identifier for the individual question (String, Required).
+* **`Question`**: The question text or prompt (String, Required).
+* **`Option1` to `Option4**`: Multiple-choice options (String, Conditional/Required for MCQ).
+* **`CorrectAnswer`**: The correct option value (String, Conditional/Required for MCQ).
+* **`Explanation`**: Detailed solution or context (String, Optional).
+* **`YtLink`**: Associated video explanation link (String, Optional).
+* **`Subject`**: Topic category under the exam (String, Required).
+
+### Main Exam Schema (`QuestionsSchema`)
+
+* **`course`**: Reference to the parent course (`ObjectId` ref: `Courses`, Required).
+* **`subjectName`**: Title or subject of the exam block (String, Required).
+* **`questionType`**: Format of questions (String, e.g., `"mcq"` or `"written"`).
+
+#### Exam Type & Scheduling Controls
+
+* **`examType`**: Classification of the exam model (`String`, Enum: `["live", "admission_based", "practice"]`, Default: `"live"`).
+* **`dayOffset`**: Number of days added to the base date for admission-based exams (`Number`, Default: `0`).
+* **`duration`**: Total time allocated for the exam in minutes (`Number`, Required).
+* **`startDate`**: Specific calendar date for the exam (`Date`, **Required only if `examType === "live"**`).
+* **`startTime`**: Specific clock time for the exam (`String`, **Required only if `examType === "live"**`).
+
+#### Marking & System Flags
+
+* **`passMark`**: Minimum score required to pass (`String`, Required).
+* **`nagetiveMark`**: Marks deducted per incorrect answer (`Number`, Default: `0.50`).
+* **`allowRetake`**: Controls whether students can retake the exam (`Boolean`, Default: `true`).
+* **`isPublished`**: Visibility status of the exam (`Boolean`, Default: `false`).
+
+#### Meta & Authoring
+
+* **`questions`**: Array of items following `QuestionsItemSchema` (Required).
+* **`createdBy`**: Admin account reference (`ObjectId` ref: `AdminAuthAccount`, Required).
+* **`creatorRole`**: Role level of the creator (`String`, Enum: `["superAdmin", "modaretor", "subAdmin"]`).
+* **`timestamps`**: Automatically tracks `createdAt` and `updatedAt`.
+
+---
+
+## 3. Core Logic & Operational Workflow
+
+### Model 1: Live Exam (`examType: "live"`)
+
+* **Configuration:** Admin provides an explicit `startDate` and `startTime`.
+* **Evaluation:** System restricts student access by directly comparing the current server time to the specified `startDate` and `startTime`.
+
+### Model 2: Admission-Based Exam (`examType: "admission_based"`)
+
+* **Configuration:** Admin provides a `dayOffset` (e.g., `0` for enrollment day, `1` for the next day) and a `startTime`. No fixed `startDate` is required.
+* **Calculation Logic (Dashboard/API Layer):**
+To handle historical enrollments where new exams are added later, the system establishes a dynamic base date:
+
+$$\text{Base Date} = \max(\text{Student Enrollment Date}, \text{Exam Creation Date } [\text{createdAt}])$$
+
+
+$$\text{Final Exam Date} = \text{Base Date} + \text{dayOffset}$$
+
+
+* **Evaluation:** Once the calculated date and `startTime` arrive, the exam unlocks similarly to a live exam.
+
+### Model 3: Practice Exam (`examType: "practice"`)
+
+* **Configuration:** Requires no date, time, or offset configuration.
+* **Evaluation:** Always accessible to enrolled students regardless of schedule, allowing unlimited practice and retakes.

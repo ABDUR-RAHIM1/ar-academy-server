@@ -4,9 +4,6 @@ import QuestionsModel from "../../models/questions/questions.model.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import mongoose from "mongoose";
 
-// ✅ POST - Create New Questions
-// duel Access (admin , subAdmin)
-
 
 // export const postQuestions = async (req, res) => {
 //     const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
@@ -39,15 +36,42 @@ import mongoose from "mongoose";
 //                 creatorRole: creator.role
 //             }
 //         );
+//         const errors = [];
+
+
 
 //         // Conditional validation
 //         if (questionType === "mcq") {
 //             // check MCQ-specific fields
-//             const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
+//             // const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
 
-//             if (invalid) {
-//                 return res.status(400).json({ message: "MCQ questions missing fields" });
-//             };
+//             questions.forEach((q, index) => {
+//                 const missingFields = [];
+//                 const isEmpty = v => v == null || (typeof v === "string" && !v.trim());
+
+//                 if (isEmpty(q.Option1)) missingFields.push("Option1");
+//                 if (isEmpty(q.Option2)) missingFields.push("Option2");
+//                 if (isEmpty(q.Option3)) missingFields.push("Option3");
+//                 if (isEmpty(q.Option4)) missingFields.push("Option4");
+//                 if (isEmpty(q.CorrectAnswer)) missingFields.push("CorrectAnswer");
+//                 if (isEmpty(q.Subject)) missingFields.push("Subject");
+
+//                 if (missingFields.length > 0) {
+//                     errors.push({
+//                         row: index + 1,
+//                         missingFields
+//                     });
+//                 }
+//             });
+
+
+
+//             if (errors.length > 0) {
+//                 return res.status(400).json({
+//                     message: "MCQ questions missing fields",
+//                     errors
+//                 });
+//             }
 
 //             newQuestions.questions = questions;
 
@@ -79,7 +103,6 @@ import mongoose from "mongoose";
 //         });
 
 //     } catch (error) {
-//         console.error(error);
 //         if (error.name === "ValidationError") {
 //             // field-wise errors একটায় সাজানো
 //             const errors = {};
@@ -99,28 +122,53 @@ import mongoose from "mongoose";
 //     }
 // };
 
-export const postQuestions = async (req, res) => {
-    const { courseId, questionType, subjectName, duration, startDate, startTime, passMark, nagetiveMark, allowRetake, isPublished, questions } = req.body;
 
+
+
+
+// + <----------------  get all questions for admin / moderator Start -------------> 
+
+//  ata suhdu matro admin / moderator er jonno
+// jekhae subAdmin er questions gulo bade baki sob access pabe admin o moderator. 
+// ✅ শুধুমাত্র admin এর জন্য: subAdmin দ্বারা তৈরি প্রশ্ন বাদে সব প্রশ্ন দেখাবে
+
+
+export const postQuestions = async (req, res) => {
+    // 1. req.body theke examType ebong dayOffset destructure kore nite hbe
+    const {
+        courseId,
+        questionType,
+        subjectName,
+        duration,
+        startDate,
+        startTime,
+        passMark,
+        nagetiveMark,
+        allowRetake,
+        isPublished,
+        questions,
+        examType,    // <-- Notun add kora holo
+        dayOffset    // <-- Notun add kora holo
+    } = req.body;
 
     const creator = req.admin || req.subAdmin;
 
-
     try {
-
         if (!questionType || !questions) {
             return res.status(400).json({ message: "questionType and questions are required" });
         };
 
-
+        // 2. QuestionsModel-e examType ebong dayOffset pass kore dite hbe
         let newQuestions = new QuestionsModel(
             {
                 course: courseId,
                 questionType,
                 subjectName,
                 duration,
-                startDate,
-                startTime,
+                examType: examType || "live", // Jodi client theke na ashe default "live" thakbe
+                dayOffset: dayOffset || 0,     // Default 0 thakbe
+                startDate: examType === "live" ? startDate : undefined, // Sudhu live holei date save hbe
+                startTime: examType === "live" || examType === "admission_based" ? startTime : undefined, // Sudhu live holei time save hbe
                 passMark,
                 nagetiveMark,
                 allowRetake,
@@ -130,15 +178,13 @@ export const postQuestions = async (req, res) => {
                 creatorRole: creator.role
             }
         );
+
+
+
         const errors = [];
 
-
-
-        // Conditional validation
+        // MCQ validation logic (ager motoi thakbe)
         if (questionType === "mcq") {
-            // check MCQ-specific fields
-            // const invalid = questions.some(q => !q.Option1 || !q.Option2 || !q.Option3 || !q.Option4 || !q.CorrectAnswer || !q.Subject);
-
             questions.forEach((q, index) => {
                 const missingFields = [];
                 const isEmpty = v => v == null || (typeof v === "string" && !v.trim());
@@ -158,8 +204,6 @@ export const postQuestions = async (req, res) => {
                 }
             });
 
-
-
             if (errors.length > 0) {
                 return res.status(400).json({
                     message: "MCQ questions missing fields",
@@ -169,9 +213,7 @@ export const postQuestions = async (req, res) => {
 
             newQuestions.questions = questions;
 
-
         } else if (questionType === "written") {
-            // check Written-specific fields
             const invalid = questions.some(q => !q.Question || !q.Subject);
 
             if (invalid) {
@@ -186,9 +228,7 @@ export const postQuestions = async (req, res) => {
             }));
 
             newQuestions.questions = writtenQuestions;
-
         };
-
 
         await newQuestions.save();
 
@@ -198,7 +238,6 @@ export const postQuestions = async (req, res) => {
 
     } catch (error) {
         if (error.name === "ValidationError") {
-            // field-wise errors একটায় সাজানো
             const errors = {};
             Object.keys(error.errors).forEach(field => {
                 errors[field] = error.errors[field].message;
@@ -216,11 +255,9 @@ export const postQuestions = async (req, res) => {
     }
 };
 
-// + <----------------  get all questions for admin / moderator Start -------------> 
 
-//  ata suhdu matro admin / moderator er jonno
-// jekhae subAdmin er questions gulo bade baki sob access pabe admin o moderator. 
-// ✅ শুধুমাত্র admin এর জন্য: subAdmin দ্বারা তৈরি প্রশ্ন বাদে সব প্রশ্ন দেখাবে
+
+
 export const getAllQuestions = async (req, res) => {
     try {
         const token = req.admin;
@@ -262,11 +299,70 @@ export const getAllQuestions = async (req, res) => {
 // - <----------------  get all questions for admin / moderator End -------------> 
 
 
-// + < --- user er course purchsae koreche sei course er questins get korbe Start  -->
+// + < working --- user er course purchsae koreche sei course er questins get korbe Start  -->
 //              user je course purchse korbe suhdu sei questions guilo dekhabe 
 
-export const getStudentCourseQuestions = async (req, res) => {
+// export const getStudentCourseQuestions = async (req, res) => {
 
+//     try {
+//         const { id } = req.user;          // লগইন করা শিক্ষার্থীর আইডি
+//         const { courseId } = req.params;  // URL থেকে কোর্স আইডি
+
+//         // 1️⃣ শিক্ষার্থী খুঁজে বের করা
+//         const student = await AccountModel.findById(id);
+
+//         if (!student) {
+//             return res.status(404).json({
+//                 message: "কোন শিক্ষার্থী পাওয়া যায়নি"
+//             });
+//         }
+
+//         // 2️⃣ শিক্ষার্থীর course তালিকা থেকে যাচাই করা
+//         const studentCourses = student.courses || [];
+
+//         // যদি কোর্সে ভর্তি না থাকে
+//         if (!studentCourses.includes(courseId)) {
+//             return res.status(403).json({
+//                 message: "আপনি এই কোর্সে ভর্তি নন"
+//             });
+//         }
+
+//         // 3️⃣ প্রশ্নগুলো বের করা (শুধু এই course এর)
+//         const questions = await QuestionsModel.find({
+//             course: courseId,
+//             participant: { $nin: [id] }
+//         })
+//             // .sort({ createdAt: -1 })
+//             .sort({ startDate: 1 })
+//             .populate("course", "name")
+//             .populate("createdBy", "username role");
+
+//         // 4️⃣ প্রয়োজনে structure সুন্দর করে ফরম্যাট করা
+//         const formattedQuestions = questions.map((q) => ({
+//             ...q.toObject(),
+//             questionsCount: q.questions?.length || 0,
+//             questions: undefined,
+//         }));
+
+//         // MCQ questions
+//         const mcq = formattedQuestions.filter(q => q.questionType === "mcq");
+
+//         // Written questions
+//         const written = formattedQuestions.filter(q => q.questionType === "written");
+
+//         res.status(200).json({
+//             mcq,
+//             written
+//         });
+
+
+//     } catch (error) {
+//         console.log(error)
+//         serverError(res, error);
+//     }
+// };
+
+export const getStudentCourseQuestions = async (req, res) => {
     try {
         const { id } = req.user;          // লগইন করা শিক্ষার্থীর আইডি
         const { courseId } = req.params;  // URL থেকে কোর্স আইডি
@@ -276,7 +372,7 @@ export const getStudentCourseQuestions = async (req, res) => {
 
         if (!student) {
             return res.status(404).json({
-                message: "কোন শিক্ষার্থী পাওয়া যায়নি"
+                message: "কোন শিক্ষার্থী পাওয়া যায়নি"
             });
         }
 
@@ -290,39 +386,73 @@ export const getStudentCourseQuestions = async (req, res) => {
             });
         }
 
-        // 3️⃣ প্রশ্নগুলো বের করা (শুধু এই course এর)
+        // নির্দিষ্ট কোর্সের সমস্ত প্রশ্ন (যা শিক্ষার্থী এখনো অংশগ্রহণ করেনি) ফেচ করা
         const questions = await QuestionsModel.find({
             course: courseId,
             participant: { $nin: [id] }
         })
-            // .sort({ createdAt: -1 })
-            .sort({ startDate: 1 })
             .populate("course", "name")
             .populate("createdBy", "username role");
 
-        // 4️⃣ প্রয়োজনে structure সুন্দর করে ফরম্যাট করা
-        const formattedQuestions = questions.map((q) => ({
-            ...q.toObject(),
-            questionsCount: q.questions?.length || 0,
-            questions: undefined,
-        }));
+        // 3️⃣ প্রতিটি এক্সামের জন্য ডাইনামিক ডেট ক্যালকুলেশন (Live, Admission-based, Practice)
+        // শিক্ষার্থীর এনরোলমেন্ট ডেট বের করা (আপনার স্কিমা অনুযায়ী ফিল্ডের নাম অ্যাডজাস্ট করে নিতে পারেন, যেমন: student.enrolledAt বা course-wise enrollment)
+        // ধরি student.enrolledAt এ পুরো কোর্সের এনরোলমেন্ট ডেট আছে, অথবা যদি অবজেক্ট হয় তবে student.enrolledDates.get(courseId) হতে পারে।
+
+        // 3️⃣ প্রতিটি এক্সামের জন্য ডাইনামিক ডেট ও টাইম ক্যালকুলেশন
+        const studentEnrollmentDate = new Date(student.enrolledAt || student.createdAt);
+
+        const processedQuestions = questions.map((q) => {
+            let effectiveStartDate = q.startDate;
+            let effectiveStartTime = q.startTime;
+
+            if (q.examType === "admission_based") {
+                const examCreationDate = new Date(q.createdAt);
+
+                // বেস ডেট নির্ধারণ
+                const baseDate = studentEnrollmentDate > examCreationDate ? studentEnrollmentDate : examCreationDate;
+
+                // dayOffset যোগ করা
+                const calculatedDate = new Date(baseDate);
+                calculatedDate.setDate(baseDate.getDate() + (q.dayOffset || 0));
+
+                effectiveStartDate = calculatedDate;
+                // admission_based পরীক্ষার জন্য অ্যাডমিনের দেওয়া startTime বহাল থাকবে
+            }
+            else if (q.examType === "practice") {
+                // প্র্যাকটিস পরীক্ষার জন্য ডেট এবং টাইম দুটোই null করে দেওয়া হলো
+                effectiveStartDate = null;
+                effectiveStartTime = null;
+            }
+
+            return {
+                ...q.toObject(),
+                startDate: effectiveStartDate, // ক্যালকুলেট করা বা নাল ডেট
+                startTime: effectiveStartTime, // ক্যালকুলেট করা বা নাল টাইম
+                questionsCount: q.questions?.length || 0,
+                questions: undefined,
+            };
+        });
+
+        // 4️⃣ ক্যালকুলেটেড ডেট অনুযায়ী সর্টিং করা (তারিখের ক্রমানুসারে সাজানো)
+        processedQuestions.sort((a, b) => {
+            if (!a.startDate) return 1;  // Practice exam গুলো শেষে পাঠাতে পারেন
+            if (!b.startDate) return -1;
+            return new Date(a.startDate) - new Date(b.startDate);
+        });
 
         // MCQ questions
-        const mcq = formattedQuestions.filter(q => q.questionType === "mcq");
+        const mcq = processedQuestions.filter(q => q.questionType === "mcq");
 
         // Written questions
-        const written = formattedQuestions.filter(q => q.questionType === "written");
+        const written = processedQuestions.filter(q => q.questionType === "written");
 
         res.status(200).json({
             mcq,
             written
         });
 
-        // 5️⃣ রেসপন্স পাঠানো
-        // res.status(200).json(formattedQuestions);
-
     } catch (error) {
-        console.log(error)
+        console.log(error);
         serverError(res, error);
     }
 };

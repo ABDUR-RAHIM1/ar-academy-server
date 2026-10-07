@@ -1,6 +1,4 @@
-
 import mongoose from "mongoose";
-
 
 const QuestionsItemSchema = new mongoose.Schema({
     ID: {
@@ -13,27 +11,21 @@ const QuestionsItemSchema = new mongoose.Schema({
     },
     Option1: {
         type: String,
-        // required: [true, "Option1 is required"]
     },
     Option2: {
         type: String,
-        // required: [true, "Option2 is required"]
     },
     Option3: {
         type: String,
-        // required: [true, "Option3 is required"]
     },
     Option4: {
         type: String,
-        // required: [true, "Option4 is required"]
     },
     CorrectAnswer: {
         type: String,
-        // required: [true, "CorrectAnswer is required"]
     },
     Explanation: {
         type: String,
-        // required: false
     },
     YtLink: {
         type: String, 
@@ -44,10 +36,7 @@ const QuestionsItemSchema = new mongoose.Schema({
     }
 }, { _id: false, strict: true });
 
-
-
 const QuestionsSchema = new mongoose.Schema({
-    //  subCategoire mean subject
     participant: {
         type: Array,
         required: false
@@ -68,18 +57,38 @@ const QuestionsSchema = new mongoose.Schema({
         trim: true
     },
 
+    // --- 3-ti Model Control korar jonnotonun field-gulo ---
+    examType: {
+        type: String,
+        enum: ["live", "admission_based", "practice"],
+        default: "live",
+        required: true
+    },
+    dayOffset: {
+        type: Number,
+        default: 0 // Admission-based model er jonno: student enroll korar koto din por exam hobe
+    },
+    // -----------------------------------------------------
+
     duration: {
         type: Number,
         required: true
     },
+
+    // Sudhu "live" exam holei startDate ebong startTime lagbe, onnothay optional
     startDate: {
         type: Date,
-        required: true
+        required: function() {
+            return this.examType === "live";
+        }
     },
     startTime: {
         type: String,
-        required: true
+        required: function() {
+            return this.examType === "live" || this.examType === "admission_based";
+        }
     },
+
     passMark: {
         type: String,
         required: true
@@ -100,7 +109,7 @@ const QuestionsSchema = new mongoose.Schema({
         default: false
     },
     questions: {
-        type:  [QuestionsItemSchema],
+        type: [QuestionsItemSchema],
         required: true
     },  
     createdBy: {
