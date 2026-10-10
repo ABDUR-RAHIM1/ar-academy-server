@@ -3,6 +3,7 @@ import { serverError } from "../../helpers/serverError.js";
 import QuestionsModel from "../../models/questions/questions.model.js";
 import AccountModel from "../../models/accounts/account.model.js";
 import mongoose from "mongoose";
+import PurchaseCourseModel from "../../models/purchaseCourse/purchaseCourse.js";
 
 
 // export const postQuestions = async (req, res) => {
@@ -384,7 +385,18 @@ export const getStudentCourseQuestions = async (req, res) => {
             return res.status(403).json({
                 message: "আপনি এই কোর্সে ভর্তি নন"
             });
-        }
+        };
+
+
+        const purchaseInfo = await PurchaseCourseModel.findOne({ student: id, course: courseId });
+
+        // যদি কোর্সে ভর্তি না থাকে
+        if (!purchaseInfo) {
+            return res.status(403).json({
+                message: "আপনি এই কোর্সে ভর্তি নন"
+            });
+        };
+
 
         // নির্দিষ্ট কোর্সের সমস্ত প্রশ্ন (যা শিক্ষার্থী এখনো অংশগ্রহণ করেনি) ফেচ করা
         const questions = await QuestionsModel.find({
@@ -394,19 +406,23 @@ export const getStudentCourseQuestions = async (req, res) => {
             .populate("course", "name")
             .populate("createdBy", "username role");
 
+
+
+
         // 3️⃣ প্রতিটি এক্সামের জন্য ডাইনামিক ডেট ক্যালকুলেশন (Live, Admission-based, Practice)
         // শিক্ষার্থীর এনরোলমেন্ট ডেট বের করা (আপনার স্কিমা অনুযায়ী ফিল্ডের নাম অ্যাডজাস্ট করে নিতে পারেন, যেমন: student.enrolledAt বা course-wise enrollment)
         // ধরি student.enrolledAt এ পুরো কোর্সের এনরোলমেন্ট ডেট আছে, অথবা যদি অবজেক্ট হয় তবে student.enrolledDates.get(courseId) হতে পারে।
 
         // 3️⃣ প্রতিটি এক্সামের জন্য ডাইনামিক ডেট ও টাইম ক্যালকুলেশন
-        const studentEnrollmentDate = new Date(student.enrolledAt || student.createdAt);
+        const studentEnrollmentDate = new Date(purchaseInfo.activatedAt || purchaseInfo.createdAt);
 
         const processedQuestions = questions.map((q) => {
             let effectiveStartDate = q.startDate;
             let effectiveStartTime = q.startTime;
 
             if (q.examType === "admission_based") {
-                const examCreationDate = new Date(q.createdAt);
+                // const examCreationDate = new Date(q.createdAt);
+                const examCreationDate = new Date(studentEnrollmentDate);
 
                 // বেস ডেট নির্ধারণ
                 const baseDate = studentEnrollmentDate > examCreationDate ? studentEnrollmentDate : examCreationDate;
@@ -457,8 +473,38 @@ export const getStudentCourseQuestions = async (req, res) => {
     }
 };
 
-// - < --- ser er course purchsae koreche sei course er questins get korbe End ---->
+// - < --- user er course purchsae koreche sei course er questins get korbe End ---->
 
+
+// - <- -------- free/ practice questions gulo dekha jabe sob gulo -----------------------> 
+
+export const getAllPracticeExams = async (req, res) => {
+    try {
+        // ডাটাবেজ থেকে সরাসরি সব 'practice' টাইপের পাবলিশড প্রশ্নগুলো বের করা
+        const questions = await QuestionsModel.find({
+            examType: "practice",
+            isPublished: true
+        })
+            .sort({ createdAt: -1 })
+            .populate("course", "name")
+            .populate("createdBy", "username role");
+
+
+
+        // শুধু MCQ গুলো ফিল্টার করা
+        const mcq = questions.filter(q => q.questionType === "mcq");
+        // const written = questions.filter(q => q.questionType === "written");
+
+        // সরাসরি শুধু mcq অ্যারে রিটার্ন করা হলো (কোনো length বা extra object নেই)
+        res.status(200).json(mcq);
+
+    } catch (error) {
+        console.log(error);
+        serverError(res, error);
+    }
+};
+
+// - <- -------- (End) free/ practice questions gulo dekha jabe sob gulo -----------------------> 
 
 
 // + <-----------------------  Sub Admin Only get his Questions Start --------------->

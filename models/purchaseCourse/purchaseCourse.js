@@ -20,6 +20,7 @@ const PurchaseCourseSchema = new mongoose.Schema({
         enum: ['pending', 'active', 'rejected'],
         default: 'pending'
     },
+    activatedAt: { type: Date, default: null },
 
     paymentDetails: {
         transactionId: { type: String, sparse: true },

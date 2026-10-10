@@ -45,6 +45,7 @@ export const createPurchaseCourse = async (req, res) => {
             course: courseId,
             courseOfferPrice: Number(course.offerPrice),
             paidAmount: isFree ? 0 : Number(paidAmount),
+            activatedAt: isFree ? Date.now() : null
         };
 
         let message = "";
@@ -139,9 +140,66 @@ export const createPurchaseCourse = async (req, res) => {
 
 
 
+// export const updatePurchaseStatus = async (req, res) => {
+//     const { purchaseId, newStatus } = req.body;
+
+
+//     if (!purchaseId || !newStatus) {
+//         return res.status(400).json({ success: false, message: "Missing required fields." });
+//     }
+
+//     try {
+//         // ৩. পারচেজ রেকর্ডটি খুঁজে বের করা
+//         const purchase = await PurchaseCourseModel.findById(purchaseId)
+//         if (!purchase) {
+//             throw new Error("Purchase record not found.");
+//         }
+
+//         // ৪. যদি আগে থেকেই একটিভ থাকে এবং আবারও একটিভ করতে বলা হয় 
+//         if (purchase.status === 'active' && newStatus === 'active') {
+//             throw new Error("This enrollment is already active.");
+//         }
+
+//         // ৫. যদি স্ট্যাটাস 'active' করতে বলা হয়, তবে স্টুডেন্টের একাউন্টে কোর্স ঢুকিয়ে দিন
+//         if (newStatus === 'active') {
+//             await AccountModel.findByIdAndUpdate(
+//                 purchase.student,
+//                 { $addToSet: { courses: purchase.course } },
+//             );
+//         }
+
+
+//         //  jodi payment statuc active na hoy tahole account theke courseId remove hobe 
+//         if (newStatus !== 'active' && purchase.status === 'active') {
+//             await AccountModel.findByIdAndUpdate(
+//                 purchase.student,
+//                 { $pull: { courses: purchase.course } },
+//             );
+//         }
+
+//         // ৭. পারচেজ স্ট্যাটাস আপডেট করা
+//         purchase.status = newStatus;
+//         await purchase.save();
+
+//         return res.status(200).json({
+//             success: true,
+//             message: `Status updated to ${newStatus} successfully.`,
+//         });
+
+//     } catch (error) {
+//         return res.status(500).json({
+//             success: false,
+//             message: error.message || "Something went wrong during status update."
+//         });
+//     }
+// };
+
+
+//  admin can assign a plan for the user
+
+
 export const updatePurchaseStatus = async (req, res) => {
     const { purchaseId, newStatus } = req.body;
-
 
     if (!purchaseId || !newStatus) {
         return res.status(400).json({ success: false, message: "Missing required fields." });
@@ -149,26 +207,30 @@ export const updatePurchaseStatus = async (req, res) => {
 
     try {
         // ৩. পারচেজ রেকর্ডটি খুঁজে বের করা
-        const purchase = await PurchaseCourseModel.findById(purchaseId)
+        const purchase = await PurchaseCourseModel.findById(purchaseId);
         if (!purchase) {
-            throw new Error("Purchase record not found.");
+            return res.status(404).json({ success: false, message: "Purchase record not found." });
         }
 
-        // ৪. যদি আগে থেকেই একটিভ থাকে এবং আবারও একটিভ করতে বলা হয় 
+        // ৪. যদি আগে থেকেই একটিভ থাকে এবং আবারও একটিভ করতে বলা হয় 
         if (purchase.status === 'active' && newStatus === 'active') {
-            throw new Error("This enrollment is already active.");
+            return res.status(400).json({ success: false, message: "This enrollment is already active." });
         }
 
-        // ৫. যদি স্ট্যাটাস 'active' করতে বলা হয়, তবে স্টুডেন্টের একাউন্টে কোর্স ঢুকিয়ে দিন
+        // ৫. যদি স্ট্যাটাস 'active' করতে বলা হয়, তবে স্টুডেন্টের একাউন্টে কোর্স ঢুকিয়ে দিন
         if (newStatus === 'active') {
             await AccountModel.findByIdAndUpdate(
                 purchase.student,
                 { $addToSet: { courses: purchase.course } },
             );
+
+            // 🔥 নতুন সংযোজন: যদি এর আগে একটিভ না থাকে, তবে বর্তমান ডেটটি activatedAt এ সেভ হবে
+            if (!purchase.activatedAt) {
+                purchase.activatedAt = new Date();
+            }
         }
 
-
-        //  jodi payment statuc active na hoy tahole account theke courseId remove hobe 
+        // ৬. যদি পেমেন্ট স্ট্যাটাস active না হয়, তাহলে একাউন্ট থেকে courseId remove হবে 
         if (newStatus !== 'active' && purchase.status === 'active') {
             await AccountModel.findByIdAndUpdate(
                 purchase.student,
@@ -178,7 +240,7 @@ export const updatePurchaseStatus = async (req, res) => {
 
         // ৭. পারচেজ স্ট্যাটাস আপডেট করা
         purchase.status = newStatus;
-        await purchase.save();
+         await purchase.save(); 
 
         return res.status(200).json({
             success: true,
@@ -193,8 +255,6 @@ export const updatePurchaseStatus = async (req, res) => {
     }
 };
 
-
-//  admin can assign a plan for the user
 
 export const assignCourseByAdmin = async (req, res) => {
     try {
@@ -276,7 +336,7 @@ export const getMyCourse = async (req, res) => {
             .populate("course")
             .sort({ createdAt: -1 })
 
-console.log("call")
+        console.log("call")
         if (!hasCourse) {
             return res.status(404).json({
                 message: "কোন কোর্স নেই!"
