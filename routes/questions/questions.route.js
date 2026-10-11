@@ -1,5 +1,5 @@
 import express from "express";
-import { deleteQuestionById, getAllPracticeExams, getAllQuestions, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, getStudentCourseQuestions, getSubAdminQuestions, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
+import { deleteQuestionById, getAllPracticeExams, getAllQuestions, getFreeSingleQuestion, getQuestionByCourseName, getQuestionById, getSingleQuestionByAdmin, getStudentCourseQuestions, getSubAdminQuestions, postQuestions, updateQuestionById } from "../../controllers/questions/questions.controller.js";
 import { optionalAuth } from "../../middleware/optionalAuth.js";
 import { adminVerify } from "../../middleware/adminVerify.js";
 import { userVerify } from "../../middleware/userVerify.js";
@@ -31,6 +31,9 @@ router.get("/getAllBySubAdmin", subAdminVerify, isSubAdminWithPackage, getSubAdm
 
 // Get question by ID
 router.get("/one/:questionId", userVerify, getQuestionById);
+
+// Get free question  details (without login required)
+router.get("/oneFreeExam/:questionId", getFreeSingleQuestion);
 
 // Get question by ID only Admin 
 router.get("/oneByAdmmin/:questionId", adminVerify, getSingleQuestionByAdmin);

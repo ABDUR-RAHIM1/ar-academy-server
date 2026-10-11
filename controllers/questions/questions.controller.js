@@ -586,6 +586,35 @@ export const getQuestionById = async (req, res) => {
 
 
 
+//  get single question for free exam (without login requred)
+export const getFreeSingleQuestion = async (req, res) => {
+    const { questionId } = req.params;
+
+    try {
+
+        if (!questionId) {
+            return res.status(403).json({
+                message: "QuestionId not found"
+            })
+        }
+
+        // ✅ প্রশ্ন আনো
+        const question = await QuestionsModel.findOne({ examType: "practice", _id: questionId }).lean();
+
+
+        if (!question) {
+            return res.status(404).json({ message: "কোন প্রশ্ন পাওয়া যায়নি" });
+        };
+
+        res.status(200).json(question);
+
+    } catch (error) {
+        console.log(error)
+        serverError(res, error)
+    }
+}
+
+
 //  get single questions only for Admin
 export const getSingleQuestionByAdmin = async (req, res) => {
     const { questionId } = req.params;
