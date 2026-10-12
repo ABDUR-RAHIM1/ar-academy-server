@@ -21,10 +21,12 @@ export const submitQuestions = async (req, res) => {
             return res.status(404).json({ message: "পরিক্ষা খুজে পাওয়া যায়নি" });
         }
 
-        const alreadyParticipated = exam.participant?.includes(id);
+        if (exam.examType !== "practice") {
+            const alreadyParticipated = exam.participant?.includes(id);
 
-        if (alreadyParticipated) {
-            return res.status(400).json({ message: "পরীক্ষাটি একবার দেওয়া হয়েছে!" });
+            if (alreadyParticipated) {
+                return res.status(400).json({ message: "পরীক্ষাটি একবার দেওয়া হয়েছে!" });
+            }
         }
 
         // ==   MCQ or Written 
