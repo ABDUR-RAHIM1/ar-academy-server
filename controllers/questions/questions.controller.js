@@ -303,66 +303,6 @@ export const getAllQuestions = async (req, res) => {
 // + < working --- user er course purchsae koreche sei course er questins get korbe Start  -->
 //              user je course purchse korbe suhdu sei questions guilo dekhabe 
 
-// export const getStudentCourseQuestions = async (req, res) => {
-
-//     try {
-//         const { id } = req.user;          // লগইন করা শিক্ষার্থীর আইডি
-//         const { courseId } = req.params;  // URL থেকে কোর্স আইডি
-
-//         // 1️⃣ শিক্ষার্থী খুঁজে বের করা
-//         const student = await AccountModel.findById(id);
-
-//         if (!student) {
-//             return res.status(404).json({
-//                 message: "কোন শিক্ষার্থী পাওয়া যায়নি"
-//             });
-//         }
-
-//         // 2️⃣ শিক্ষার্থীর course তালিকা থেকে যাচাই করা
-//         const studentCourses = student.courses || [];
-
-//         // যদি কোর্সে ভর্তি না থাকে
-//         if (!studentCourses.includes(courseId)) {
-//             return res.status(403).json({
-//                 message: "আপনি এই কোর্সে ভর্তি নন"
-//             });
-//         }
-
-//         // 3️⃣ প্রশ্নগুলো বের করা (শুধু এই course এর)
-//         const questions = await QuestionsModel.find({
-//             course: courseId,
-//             participant: { $nin: [id] }
-//         })
-//             // .sort({ createdAt: -1 })
-//             .sort({ startDate: 1 })
-//             .populate("course", "name")
-//             .populate("createdBy", "username role");
-
-//         // 4️⃣ প্রয়োজনে structure সুন্দর করে ফরম্যাট করা
-//         const formattedQuestions = questions.map((q) => ({
-//             ...q.toObject(),
-//             questionsCount: q.questions?.length || 0,
-//             questions: undefined,
-//         }));
-
-//         // MCQ questions
-//         const mcq = formattedQuestions.filter(q => q.questionType === "mcq");
-
-//         // Written questions
-//         const written = formattedQuestions.filter(q => q.questionType === "written");
-
-//         res.status(200).json({
-//             mcq,
-//             written
-//         });
-
-
-//     } catch (error) {
-//         console.log(error)
-//         serverError(res, error);
-//     }
-// };
-
 export const getStudentCourseQuestions = async (req, res) => {
     try {
         const { id } = req.user;          // লগইন করা শিক্ষার্থীর আইডি
@@ -387,15 +327,17 @@ export const getStudentCourseQuestions = async (req, res) => {
             });
         };
 
-
-        const purchaseInfo = await PurchaseCourseModel.findOne({ student: id, course: courseId });
-
-        // যদি কোর্সে ভর্তি না থাকে
-        if (!purchaseInfo) {
-            return res.status(403).json({
-                message: "আপনি এই কোর্সে ভর্তি নন"
-            });
-        };
+        let purchaseInfo = null; 
+        if (student.role !== "subStudent") {
+            purchaseInfo = await PurchaseCourseModel.findOne({ student: id, course: courseId });
+      
+            // যদি কোর্সে ভর্তি না থাকে
+            if (!purchaseInfo) {
+                return res.status(403).json({
+                    message: "আপনি এই কোর্সে ভর্তি নন"
+                });
+            };
+        }
 
 
         // নির্দিষ্ট কোর্সের সমস্ত প্রশ্ন (যা শিক্ষার্থী এখনো অংশগ্রহণ করেনি) ফেচ করা
@@ -408,13 +350,12 @@ export const getStudentCourseQuestions = async (req, res) => {
 
 
 
-
         // 3️⃣ প্রতিটি এক্সামের জন্য ডাইনামিক ডেট ক্যালকুলেশন (Live, Admission-based, Practice)
         // শিক্ষার্থীর এনরোলমেন্ট ডেট বের করা (আপনার স্কিমা অনুযায়ী ফিল্ডের নাম অ্যাডজাস্ট করে নিতে পারেন, যেমন: student.enrolledAt বা course-wise enrollment)
         // ধরি student.enrolledAt এ পুরো কোর্সের এনরোলমেন্ট ডেট আছে, অথবা যদি অবজেক্ট হয় তবে student.enrolledDates.get(courseId) হতে পারে।
 
         // 3️⃣ প্রতিটি এক্সামের জন্য ডাইনামিক ডেট ও টাইম ক্যালকুলেশন
-        const studentEnrollmentDate = new Date(purchaseInfo.activatedAt || purchaseInfo.createdAt);
+        const studentEnrollmentDate = student.role=== "subStudent" ? new Date(student?.createdAt) : new Date(purchaseInfo?.activatedAt || purchaseInfo?.createdAt);
 
         const processedQuestions = questions.map((q) => {
             let effectiveStartDate = q.startDate;
@@ -549,7 +490,6 @@ export const getSubAdminQuestions = async (req, res) => {
 */
 export const getQuestionById = async (req, res) => {
     try {
-
         const { questionId } = req.params;
         const { id } = req.user;
 

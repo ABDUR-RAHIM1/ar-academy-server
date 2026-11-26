@@ -88,7 +88,6 @@ export const getMyCourseStudent = async (req, res) => {
     try {
         const { id } = req.user;
         const student = await AccountModel.findById(id);
-
         if (!student) {
             return res.status(404).json({
                 message: `${token.role || "user"} খুঁজে পাওয়া যায়নি  `
@@ -107,8 +106,8 @@ export const getMyCourseStudent = async (req, res) => {
         const hasCourse = await CourseModel.find({
             _id: { $in: student.courses }
         })
-        .sort({ createdAt: -1 })
-        .select("_id name links regularPrice offerPrice duration startDate createdAt updatedAt")
+            .sort({ createdAt: -1 })
+            .select("_id name links regularPrice offerPrice duration startDate createdAt updatedAt")
 
         // Step 4: Return the courses
         return res.status(200).json(hasCourse);
